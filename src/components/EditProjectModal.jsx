@@ -4,7 +4,6 @@ import { toast } from 'react-toastify';
 import { useDropzone } from 'react-dropzone';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import "react-datepicker/dist/react-datepicker.css";
 import { getIcon } from '../utils/iconUtils';
 
 // Import icons
@@ -239,103 +238,105 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
         </div>
       );
     }
+  
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-            animate={{ scale: 1, y: 0 }}
           <motion.div
             className="bg-white dark:bg-surface-800 rounded-xl max-w-md w-full p-6"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
           >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Edit Project</h2>
-              <button 
-                onClick={onClose} 
-                className="text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
-                className="p-1 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
-                <XIcon className="h-5 w-5" />
-              </button>
-            </div>
+           <div className="flex justify-between items-center mb-6">
+             <h2 className="text-xl font-semibold">Edit Project</h2>
+             <button 
+               onClick={onClose} 
+               className="p-1 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
+             >
+               <XIcon className="h-5 w-5" />
+             </button>
+           </div>
             
-            <div className="max-h-[70vh] overflow-y-auto p-5">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <h3 className="text-lg font-medium">Basic Information</h3>
-                  <label htmlFor="name" className="label">Project Name *</label>
+           <div className="max-h-[70vh] overflow-y-auto p-5">
+             <form onSubmit={handleSubmit} className="space-y-6">
+               <h3 className="text-lg font-medium">Basic Information</h3>
+               
+               <div>
                   <label htmlFor="name" className="label">Project Name*</label>
-                    type="text"
                   <input
                     id="name"
                     type="text"
+                   name="name"
+                   value={formData.name}
                     onChange={handleInputChange}
                     className={`input ${!validation.name ? 'border-red-500 dark:border-red-500' : ''}`}
-                    placeholder="e.g., Website Redesign"
                     placeholder="Enter project name"
-                  {!validation.name && <p className="mt-1 text-sm text-red-500">Project name is required</p>}
-                  {errors.name && <p className="text-red-500 text-sm mt-1">Project name is required</p>}
-                </div>
-                
-                  <label htmlFor="client" className="label">Client *</label>
-                <label htmlFor="client" className="label">Client *</label>
-                    type="text"
+                 />
+                 {!validation.name && <p className="mt-1 text-sm text-red-500">Project name is required</p>}
+               </div>
+               
+               <div>
+                 <label htmlFor="client" className="label">Client *</label>
                   <input
                     id="client"
                     type="text"
+                   name="client"
+                   value={formData.client}
                     onChange={handleInputChange}
                     className={`input ${!validation.client ? 'border-red-500 dark:border-red-500' : ''}`}
-                    placeholder="e.g., Acme Corp"
                     placeholder="Enter client name"
-                  {!validation.client && <p className="mt-1 text-sm text-red-500">Client name is required</p>}
-                </div>
-                  />
-                <div>
-                  <label htmlFor="description" className="label">Description</label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    className="input h-24"
-                    placeholder="Describe the project scope and objectives..."
-                  />
-                </div>
-              </div>
-                <h3 className="text-lg font-medium mt-6">Timeline & Management</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="label">Start Date *</label>
-                    <DatePicker
-                      selected={formData.startDate}
-                      onChange={(date) => handleDateChange(date, 'startDate')}
-                      className={`input ${!validation.startDate ? 'border-red-500 dark:border-red-500' : ''}`}
-                      placeholderText="Select start date"
-                      dateFormat="MMMM d, yyyy"
-                    />
-                    {!validation.startDate && <p className="mt-1 text-sm text-red-500">Start date is required</p>}
-                  </div>
-                  
-                  <div>
-                    <label className="label">End Date</label>
-                    <DatePicker
-                      selected={formData.endDate}
-                      onChange={(date) => handleDateChange(date, 'endDate')}
-                      className="input"
-                      placeholderText="Select end date"
-                      dateFormat="MMMM d, yyyy"
-                      minDate={formData.startDate}
-                    />
-                  </div>
-                  {!validation.startDate && <p className="mt-1 text-sm text-red-500">Start date is required</p>}
+                 />
+                 {!validation.client && <p className="mt-1 text-sm text-red-500">Client name is required</p>}
+               </div>
 
-                
-                  <label htmlFor="manager" className="label">Project Manager *</label>
+               <div>
+                 <label htmlFor="description" className="label">Description</label>
+                 <textarea
+                   id="description"
+                   name="description"
+                   value={formData.description}
+                   onChange={handleInputChange}
+                   className="input h-24"
+                   placeholder="Describe the project scope and objectives..."
+                 />
+               </div>
+
+               <h3 className="text-lg font-medium mt-6">Timeline & Management</h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                   <label className="label">Start Date *</label>
+                   <DatePicker
+                     selected={formData.startDate}
+                     onChange={(date) => handleDateChange(date, 'startDate')}
+                     className={`input ${!validation.startDate ? 'border-red-500 dark:border-red-500' : ''}`}
+                     placeholderText="Select start date"
+                     dateFormat="MMMM d, yyyy"
+                   />
+                   {!validation.startDate && <p className="mt-1 text-sm text-red-500">Start date is required</p>}
+                 </div>
+                 
+                 <div>
+                   <label className="label">End Date</label>
+                   <DatePicker
+                     selected={formData.endDate}
+                     onChange={(date) => handleDateChange(date, 'endDate')}
+                     className="input"
+                     placeholderText="Select end date"
+                     dateFormat="MMMM d, yyyy"
+                     minDate={formData.startDate}
+                   />
+                 </div>
+               </div>
+
+               <div>
+                 <label htmlFor="manager" className="label">Project Manager *</label>
                   <input
                     type="text"
                     id="manager"
@@ -344,12 +345,12 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                     onChange={handleInputChange}
                     className={`input ${!validation.manager ? 'border-red-500 dark:border-red-500' : ''}`}
                     placeholder="Name of project manager"
-                    minDate={startDate}
-                  {!validation.manager && <p className="mt-1 text-sm text-red-500">Project manager is required</p>}
                   />
+                  {!validation.manager && <p className="mt-1 text-sm text-red-500">Project manager is required</p>}
+               </div>
 
-                
-                  <label className="label">Team Members</label>
+               <div>
+                 <label className="label">Team Members</label>
                   <div className="flex space-x-2">
                     <input
                       type="text"
@@ -385,9 +386,8 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                       ))}
                     </div>
                   )}
-                  </select>
-                
-                <h3 className="text-lg font-medium mt-6">Project Details</h3>
+               </div>
+               <h3 className="text-lg font-medium mt-6">Project Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="status" className="label">Status</label>
@@ -422,10 +422,8 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                       ))}
                     </select>
                   </div>
-                  </button>
-                </label>
-                <div>
-                  <label htmlFor="budget" className="label">Budget (USD) *</label>
+                  <div>
+                    <label htmlFor="budget" className="label">Budget (USD) *</label>
                   <input
                     type="text"
                     id="budget"
@@ -436,9 +434,9 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                     placeholder="e.g., 5000"
                   />
                   {!validation.budget && <p className="mt-1 text-sm text-red-500">Valid budget amount is required</p>}
-                  {errors.client && <p className="text-red-500 text-sm mt-1">Client name is required</p>}
+                  </div>
+                </div>
 
-                <div>
                   <label className="label">Tags</label>
                   <div className="flex space-x-2">
                     <input
@@ -475,9 +473,8 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                       ))}
                     </div>
                   )}
-                </div>
 
-                <div>
+               <div>
                   <label className="label">Attachments</label>
                   <input
                     {...getInputProps()}
@@ -505,7 +502,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                         </div>
                       ))}
                     </div>
-                  )}
+               </div>
                 </div>
 
                 <div className="mt-6 flex justify-end space-x-3">
@@ -517,9 +514,8 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                 </div>
               </form>
             </div>
-            </form>
-        </motion.div>
-        </motion.div>
+          </motion.div>
+       </motion.div>
       )}
     </AnimatePresence>
   );
