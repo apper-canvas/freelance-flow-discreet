@@ -238,6 +238,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
         </div>
       );
     }
+  };
   
   return (
     <AnimatePresence>
@@ -264,8 +265,8 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
              </button>
            </div>
             
-           <div className="max-h-[70vh] overflow-y-auto p-5">
-             <form onSubmit={handleSubmit} className="space-y-6">
+           <form onSubmit={handleSubmit} className="space-y-6">
+             <div className="max-h-[70vh] overflow-y-auto p-5">
                <h3 className="text-lg font-medium">Basic Information</h3>
                
                <div>
@@ -273,7 +274,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                   <input
                     id="name"
                     type="text"
-                   name="name"
+                    name="name"
                    value={formData.name}
                     onChange={handleInputChange}
                     className={`input ${!validation.name ? 'border-red-500 dark:border-red-500' : ''}`}
@@ -287,7 +288,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                   <input
                     id="client"
                     type="text"
-                   name="client"
+                    name="client"
                    value={formData.client}
                     onChange={handleInputChange}
                     className={`input ${!validation.client ? 'border-red-500 dark:border-red-500' : ''}`}
@@ -436,7 +437,8 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                   {!validation.budget && <p className="mt-1 text-sm text-red-500">Valid budget amount is required</p>}
                   </div>
                 </div>
-
+                
+                <div>
                   <label className="label">Tags</label>
                   <div className="flex space-x-2">
                     <input
@@ -473,38 +475,40 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                       ))}
                     </div>
                   )}
-
-               <div>
-                  <label className="label">Attachments</label>
-                  <input
-                    {...getInputProps()}
-                    id="file-upload-edit"
-                  />
-                  <div
-                    {...getRootProps()}
-                    className="btn-ghost w-full flex justify-center items-center p-3 border-2 border-dashed border-surface-300 dark:border-surface-600 rounded-lg cursor-pointer"
-                  >
-                    <span>Drag & drop files here, or click to select files</span>
-                  </div>
-                  
-                  {formData.attachments.length > 0 && (
-                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {formData.attachments.map((attachment, index) => (
-                        <div key={index} className="relative group">
-                          {renderFilePreview(attachment)}
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
-                            <button type="button" onClick={() => handleRemoveAttachment(attachment)} className="text-white p-1.5 bg-red-500 rounded-full hover:bg-red-600">
-                              <XIcon className="h-4 w-4" />
-                            </button>
-                          </div>
-                          <p className="text-xs truncate mt-1">{attachment.name}</p>
-                          <p className="text-xs text-surface-500">{attachment.size ? formatFileSize(attachment.size) : ''}</p>
-                        </div>
-                      ))}
-                    </div>
-               </div>
                 </div>
-
+                
+                <div>
+                   <label className="label">Attachments</label>
+                   <input
+                     {...getInputProps()}
+                     id="file-upload-edit"
+                   />
+                   <div
+                     {...getRootProps()}
+                     className="btn-ghost w-full flex justify-center items-center p-3 border-2 border-dashed border-surface-300 dark:border-surface-600 rounded-lg cursor-pointer"
+                   >
+                     <span>Drag & drop files here, or click to select files</span>
+                   </div>
+                   
+                   {formData.attachments.length > 0 && (
+                     <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                       {formData.attachments.map((attachment, index) => (
+                         <div key={index} className="relative group">
+                           {renderFilePreview(attachment)}
+                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
+                             <button type="button" onClick={() => handleRemoveAttachment(attachment)} className="text-white p-1.5 bg-red-500 rounded-full hover:bg-red-600">
+                               <XIcon className="h-4 w-4" />
+                             </button>
+                           </div>
+                           <p className="text-xs truncate mt-1">{attachment.name}</p>
+                           <p className="text-xs text-surface-500">{attachment.size ? formatFileSize(attachment.size) : ''}</p>
+                          </div>
+                       ))}
+                     </div>
+                   )}
+                 </div>
+              </div>
+              
                 <div className="mt-6 flex justify-end space-x-3">
                   <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
                   <button type="submit" className="btn-primary">
@@ -512,10 +516,9 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                     Save Changes
                   </button>
                 </div>
-              </form>
-            </div>
+            </form>
           </motion.div>
-       </motion.div>
+        </motion.div>
       )}
     </AnimatePresence>
   );
