@@ -62,7 +62,6 @@ export default {
           900: '#134e4a',
           950: '#042f2e'
         },
-        accent: '#f59e0b',
       },
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui'],

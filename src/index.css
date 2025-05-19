@@ -157,6 +157,7 @@
       var(--gradient-dark-3) 100%
     );
     animation: gradientAnimation 15s ease infinite;
+  }
 
   /* New mesh gradients that are more modern */
   .bg-mesh-light {

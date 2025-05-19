@@ -163,10 +163,10 @@ const BackgroundEffect = ({ darkMode }) => {
                 `${particle.x}%`, 
                 `${(particle.x + (mousePosition.x > particle.x ? 8 : -8)) % 100}%`
               ], 
-              y: [
                 `${particle.y}%`, 
                 `${(particle.y + (mousePosition.y > particle.y ? 12 : -12)) % 100}%`
-              ],
+                `${(particle.y + (mousePosition && 
+                  mousePosition.y > particle.y ? 12 : -12)) % 100}%`
               opacity: particle.opacity,
               rotate: particle.rotation + particle.rotationSpeed * 360
             }}
