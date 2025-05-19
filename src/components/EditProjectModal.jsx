@@ -184,9 +184,8 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
       URL.revokeObjectURL(attachmentToRemove.url);
     }
   };
+
   const handleSubmit = async (e) => {
-    setIsSubmitting(true);
-  const handleSubmit = (e) => {
     e.preventDefault();
     
     // Validate form fields
@@ -213,6 +212,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
           Name: formData.name,
           client: formData.client,
           description: formData.description,
+        setIsSubmitting(true);
           startDate: formData.startDate,
           endDate: formData.endDate,
           manager: formData.manager,
