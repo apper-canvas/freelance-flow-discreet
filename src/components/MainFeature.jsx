@@ -51,6 +51,11 @@ function MainFeature({ activeTab }) {
     task: '',
     description: '',
   });
+  const [newProject, setNewProject] = useState({
+    project: '',
+    task: '',
+    description: '',
+  });
   const [selectedProject, setSelectedProject] = useState('');
   const [timer, setTimer] = useState(0);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -154,6 +159,11 @@ function MainFeature({ activeTab }) {
     toast.success("Time entry deleted");
   };
 
+  const addProject = (project) => {
+    setProjects(prev => [project, ...prev]);
+    toast.success(`Project "${project.name}" created successfully!`);
+  };
+
   if (activeTab === 'projects') {
     return (
       <div className="space-y-6">
@@ -180,7 +190,7 @@ function MainFeature({ activeTab }) {
             className="card border-2 border-dashed border-surface-200 dark:border-surface-700 flex flex-col items-center justify-center cursor-pointer h-full min-h-[150px]"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => toast.info("Create new project feature coming soon!")}
+            onClick={() => toast.info("Click the '+ New Project' button at the top to create a project")}
           >
             <PlusIcon className="h-10 w-10 mb-2 text-surface-400" />
             <p className="font-medium text-surface-500">New Project</p>
@@ -439,7 +449,7 @@ function MainFeature({ activeTab }) {
     );
   }
 
-  return null;
+  return { addProject };
 }
 
 export default MainFeature;

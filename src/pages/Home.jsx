@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { getIcon } from '../utils/iconUtils';
 import MainFeature from '../components/MainFeature';
+import NewProjectModal from '../components/NewProjectModal';
 
 const BarChart = getIcon('bar-chart-3');
 const Clock = getIcon('clock');
@@ -12,12 +13,15 @@ const Users = getIcon('users');
 function Home() {
   const [activeTab, setActiveTab] = useState('projects');
   const [loading, setLoading] = useState(true);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [stats, setStats] = useState({
     activeProjects: 0,
     trackedHours: 0,
     pendingInvoices: 0,
     totalClients: 0
   });
+
+  const mainFeatureRef = useRef();
 
   // Simulate data loading
   useEffect(() => {
@@ -37,6 +41,16 @@ function Home() {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     // In a real app, we'd fetch different data here
+  };
+
+  const handleNewProject = () => {
+    setShowNewProjectModal(true);
+  };
+
+  const handleAddProject = (project) => {
+    if (mainFeatureRef.current && mainFeatureRef.current.addProject) {
+      mainFeatureRef.current.addProject(project);
+    }
   };
 
   const StatCard = ({ icon, title, value, iconColor, valueSuffix = '' }) => {
@@ -72,7 +86,7 @@ function Home() {
             className="btn-primary"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => toast.success("Let's create a new project!")}
+            onClick={handleNewProject}
           >
             <span className="mr-2">+ New Project</span>
           </motion.button>
@@ -139,9 +153,15 @@ function Home() {
             key={activeTab}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            <MainFeature activeTab={activeTab} ref={mainFeatureRef} />
             transition={{ duration: 0.2 }}
           >
+        
+        <NewProjectModal 
+          isOpen={showNewProjectModal}
+          onClose={() => setShowNewProjectModal(false)}
+          onAddProject={handleAddProject}
+        />
             <MainFeature activeTab={activeTab} />
           </motion.div>
         </AnimatePresence>
