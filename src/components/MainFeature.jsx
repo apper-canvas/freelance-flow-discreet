@@ -260,6 +260,10 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
   };
   };
 
+  const handleNewProject = () => {
+    toast.info("Click the '+ New Project' button at the top to create a project");
+  };
+
   useEffect(() => {
     let interval = null;
     if (isTimerRunning) {
