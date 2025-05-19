@@ -153,18 +153,17 @@ function Home() {
             key={activeTab}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            <MainFeature activeTab={activeTab} ref={mainFeatureRef} />
             transition={{ duration: 0.2 }}
           >
-        
+            <MainFeature activeTab={activeTab} ref={mainFeatureRef} />
+          </motion.div>
+        </AnimatePresence>
+
         <NewProjectModal 
           isOpen={showNewProjectModal}
           onClose={() => setShowNewProjectModal(false)}
           onAddProject={handleAddProject}
         />
-            <MainFeature activeTab={activeTab} />
-          </motion.div>
-        </AnimatePresence>
       </section>
     </div>
   );
