@@ -167,7 +167,7 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
   };
 
   const addProject = (project) => {
-    setProjects(prev => [project, ...prev]);
+    setProjects(prev => [{id: project.id, name: project.name, client: project.client}, ...prev]);
     toast.success(`Project "${project.name}" created successfully!`);
   };
 
@@ -418,7 +418,7 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project, index) => (
             <motion.div 
-              key={index}
+              key={project.id}
               className="card hover:shadow-lg transition-shadow"
               whileHover={{ y: -5 }}
               initial={{ opacity: 0, y: 20 }}
