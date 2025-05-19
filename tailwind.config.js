@@ -29,6 +29,18 @@ export default {
           700: '#334155',
           800: '#1e293b',
           900: '#0f172a'
+        },
+        gradient: {
+          light: {
+            start: '#fef9c3',
+            middle: '#dbeafe',
+            end: '#f3e8ff'
+          },
+          dark: {
+            start: '#1e1b4b',
+            middle: '#042f2e',
+            end: '#3b0764'
+          }
         }
       },
       fontFamily: {

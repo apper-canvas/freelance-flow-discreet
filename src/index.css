@@ -6,12 +6,24 @@
 @import 'react-toastify/dist/ReactToastify.css';
 
 @layer base {
+  :root {
+    --gradient-light-1: #fef9c3;
+    --gradient-light-2: #dbeafe;
+    --gradient-light-3: #f3e8ff;
+    --gradient-dark-1: #1e1b4b;
+    --gradient-dark-2: #042f2e;
+    --gradient-dark-3: #3b0764;
+  }
+  
   html {
     @apply scroll-smooth;
   }
   
   body {
-    @apply min-h-screen bg-surface-50 dark:bg-surface-900 text-surface-800 dark:text-surface-100;
+    @apply min-h-screen text-surface-800 dark:text-surface-100;
+    background-color: transparent;
+    background-size: 300% 300%;
+    position: relative;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -49,7 +61,7 @@
   }
   
   .card {
-    @apply bg-white dark:bg-surface-800 rounded-xl shadow-card p-5 transition-all duration-200;
+    @apply bg-white/90 dark:bg-surface-800/90 backdrop-blur-sm rounded-xl shadow-card p-5 transition-all duration-200;
   }
   
   .input {
@@ -72,7 +84,51 @@
   }
   
   .glass {
-    @apply backdrop-blur-lg bg-white/60 dark:bg-surface-900/60 border border-white/20 dark:border-surface-700/20;
+    @apply backdrop-blur-lg bg-white/80 dark:bg-surface-900/80 border border-white/20 dark:border-surface-700/20;
+  }
+
+  .bg-gradient-light {
+    background: linear-gradient(
+      135deg,
+      var(--gradient-light-1) 0%,
+      var(--gradient-light-2) 50%,
+      var(--gradient-light-3) 100%
+    );
+    animation: gradientAnimation 15s ease infinite;
+  }
+  
+  .bg-gradient-dark {
+    background: linear-gradient(
+      135deg,
+      var(--gradient-dark-1) 0%,
+      var(--gradient-dark-2) 50%,
+      var(--gradient-dark-3) 100%
+    );
+    animation: gradientAnimation 15s ease infinite;
+  }
+  
+  .bg-animated-gradient {
+    opacity: 0.7;
+    background-size: 400% 400%;
+    animation: shimmerAnimation 15s ease infinite;
+  }
+  
+  @keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  @keyframes shimmerAnimation {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
   }
   
   .text-balance {

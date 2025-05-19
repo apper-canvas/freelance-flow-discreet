@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Moon, Sun } from 'lucide-react';
 import Home from './pages/Home';
 import NotFound from './pages/NotFound';
+import BackgroundEffect from './components/BackgroundEffect';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
@@ -31,6 +32,8 @@ function App() {
 
   return (
     <>
+      <BackgroundEffect darkMode={darkMode} />
+      
       <header className="fixed top-0 left-0 right-0 z-40 glass">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-2">
@@ -49,7 +52,7 @@ function App() {
           </motion.button>
         </div>
       </header>
-
+      
       <main className="pt-16 min-h-screen">
         <Routes>
           <Route path="/" element={<Home />} />
