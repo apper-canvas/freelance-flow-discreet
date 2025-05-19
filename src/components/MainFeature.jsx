@@ -1,5 +1,6 @@
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { motion } from 'framer-motion';
+import { format } from 'date-fns';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { getIcon } from '../utils/iconUtils';
@@ -70,6 +71,61 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
+  // Helper function to format dates
+  const formatDate = (date) => {
+    if (!date) return 'Not set';
+    return format(new Date(date), 'MMM d, yyyy');
+  };
+
+  // Helper function to get priority badge color
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'low':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'medium':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      case 'urgent':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+
+  // Helper function to get status badge color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'in-progress':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'completed':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'on-hold':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+
+  // Function to format currency
+  const formatCurrency = (amount) => {
+    if (!amount) return '$0';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Function to get team members display
+  const getTeamMembersDisplay = (members) => {
+    if (!members || members.length === 0) return 'No team members';
+    return members.join(', ');
+  };
+
   
   // Expose the addProject method through the ref
   useImperativeHandle(ref, () => ({
@@ -97,36 +153,95 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     
     return [
       hours.toString().padStart(2, '0'),
-      minutes.toString().padStart(2, '0'),
+                  className="card flex flex-col p-5"
       seconds.toString().padStart(2, '0'),
-    ].join(':');
-  };
+                  <div className="flex flex-col md:flex-row justify-between mb-4">
+                    <div>
+                      <h3 className="text-xl font-semibold">{project.name}</h3>
+                      <p className="text-surface-600 dark:text-surface-300 mt-1">Client: {project.client}</p>
+                    </div>
+                    <div className="flex space-x-2 mt-4 md:mt-0">
+                      <button
+                        className="btn-ghost px-3 py-1.5 text-sm"
+                        onClick={() => handleViewProject(project)}
+                      >
+                        <EyeIcon className="h-4 w-4 mr-1.5" />
+                        View
+                      </button>
+                      <button
+                        className="btn-ghost px-3 py-1.5 text-sm"
+                        onClick={() => handleEditProject(project)}
+                      >
+                        <EditIcon className="h-4 w-4 mr-1.5" />
+                        Edit
+                      </button>
+                      <button
+                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 px-3 py-1.5 rounded-lg text-sm"
+                        onClick={() => handleDeleteProject(project.id)}
+                      >
+                        <TrashIcon className="h-4 w-4 mr-1.5" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
 
-  const handleInputChange = (e) => {
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div className="text-sm">
+                      <span className="block text-surface-500 dark:text-surface-400">Timeline:</span>
+                      <span>{formatDate(project.startDate)} - {project.endDate ? formatDate(project.endDate) : 'Ongoing'}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="block text-surface-500 dark:text-surface-400">Manager:</span>
+                      <span>{project.manager || 'Not assigned'}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="block text-surface-500 dark:text-surface-400">Budget:</span>
+                      <span>{formatCurrency(project.budget)}</span>
+                    </div>
+                    <div className="text-sm">
+                      <span className="block text-surface-500 dark:text-surface-400">Team:</span>
+                      <span className="truncate">{getTeamMembersDisplay(project.teamMembers)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                      {project.status ? project.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Pending'}
+                    </div>
+                    <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${getPriorityColor(project.priority)}`}>
+                      {project.priority ? project.priority.charAt(0).toUpperCase() + project.priority.slice(1) : 'Medium'} Priority
+                    </div>
+                    {project.tags && project.tags.map((tag, index) => (
+                      <div key={index} className="bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-2.5 py-1 rounded-full text-xs">
+                        {tag}
+                      </div>
+                    ))}
     const { name, value } = e.target;
-    setNewEntry(prev => ({ ...prev, [name]: value }));
-    
-    // Clear validation error when user types
-    if (!value.trim()) {
-      setValidation(prev => ({ ...prev, [name]: false }));
-    } else {
-      setValidation(prev => ({ ...prev, [name]: true }));
-    }
-  };
 
-  const openEditModal = (project) => {
-    setCurrentProject(project);
-    setIsEditModalOpen(true);
-  };
-  
-  const closeEditModal = () => setIsEditModalOpen(false);
+                  {project.description && (
+                    <div className="mt-2">
+                      <p className="text-surface-600 dark:text-surface-300 text-sm">{project.description}</p>
+                    </div>
+                  )}
 
-  const startTimer = () => {
-    // Validate form fields
-    const isProjectValid = !!newEntry.project.trim();
-    const isTaskValid = !!newEntry.task.trim();
-    const isDescriptionValid = !!newEntry.description.trim();
-    
+                  {project.attachments && project.attachments.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs text-surface-500 mb-2">Attachments ({project.attachments.length})</p>
+                      <div className="flex flex-wrap gap-2">
+                        {project.attachments.slice(0, 3).map((attachment, index) => (
+                          <div key={index} className="flex items-center text-xs bg-surface-100 dark:bg-surface-700 rounded px-2 py-1">
+                            <FileIcon className="h-3 w-3 mr-1" />
+                            <span className="truncate max-w-[100px]">{attachment.name}</span>
+                          </div>
+                        ))}
+                        {project.attachments.length > 3 && (
+                          <div className="text-xs bg-surface-100 dark:bg-surface-700 rounded px-2 py-1">
+                            +{project.attachments.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
     setValidation({
       project: isProjectValid,
       task: isTaskValid,
