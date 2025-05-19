@@ -4,25 +4,37 @@ import { toast } from 'react-toastify';
 import { useDropzone } from 'react-dropzone';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { getIcon } from '../utils/iconUtils';
 
 // Import icons
 const CheckIcon = getIcon('check-circle');
+const XIcon = getIcon('x');
 
-    id: '',
+const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
   const [formData, setFormData] = useState({
-    id: '',
-    name: '',
-    client: ''
+    id: project?.id || '',
+    name: project?.name || '',
+    client: project?.client || '',
+    description: project?.description || '',
+    startDate: project?.startDate ? new Date(project?.startDate) : null,
+    endDate: project?.endDate ? new Date(project?.endDate) : null,
+    manager: project?.manager || '',
+    teamMembers: project?.teamMembers || [],
+    priority: project?.priority || 'medium',
+    status: project?.status || 'pending',
+    budget: project?.budget || '',
+    tags: project?.tags || [],
+    attachments: project?.attachments || []
   });
   
   const [errors, setErrors] = useState({
-    budget: '0',
-    startDate: true,
-    attachments: [],
-    manager: true,
+    name: false,
+    client: false,
+    startDate: false,
+    budget: false,
+    manager: false
+  });
   
   const [validation, setValidation] = useState({
     name: true,
@@ -55,34 +67,15 @@ const CheckIcon = getIcon('check-circle');
       handleFileChange({ target: { files: acceptedFiles } });
     }
   });
-    budget: true
-  });
 
-      // Reset validation
-      setValidation({
-        name: true,
-        client: true,
-        startDate: true,
-        endDate: true,
-        manager: true,
-        budget: true
-      });
-      
-      // Clear temporary state
-      setNewTag('');
-      setNewTeamMember('');
-      
-      // Clean up any existing object URLs to prevent memory leaks
-      formData.attachments.forEach(attachment => {
-        if (attachment.url) URL.revokeObjectURL(attachment.url);
-      });
-  const [newTag, setNewTag] = useState('');
-  const [newTeamMember, setNewTeamMember] = useState('');
-
-  const statusOptions = [
-    { value: 'pending', label: 'Pending' },
-    { value: 'in-progress', label: 'In Progress' },
-    { value: 'completed', label: 'Completed' },
+  // Update form data when project changes
+  useEffect(() => {
+    if (project) {
+      setFormData({
+        id: project.id,
+        name: project.name || '',
+        client: project.client || '',
+        description: project.description || '',
         startDate: project.startDate ? new Date(project.startDate) : null,
         endDate: project.endDate ? new Date(project.endDate) : null,
         manager: project.manager || '',
@@ -92,20 +85,33 @@ const CheckIcon = getIcon('check-circle');
         budget: project.budget || '',
         tags: project.tags || [],
         attachments: project.attachments || []
-
-  const priorityOptions = [
-    { value: 'low', label: 'Low' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high', label: 'High' },
-    { value: 'urgent', label: 'Urgent' }
-    client: false
+      });
+    }
+  }, [project]);
+  
+  // Clean up created object URLs on component unmount
+  useEffect(() => {
+    return () => {
+      if (formData.attachments) {
+        formData.attachments.forEach(attachment => {
+          if (attachment.url) {
+            URL.revokeObjectURL(attachment.url);
+          }
+        });
+      }
+    };
+  }, []);
+  
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
     
     // Clear validation error when user types
     if (['name', 'client', 'manager', 'budget'].includes(name)) {
       setValidation(prev => ({ ...prev, [name]: !!value.trim() }));
     }
-  });
-  
+  };
+
   const handleDateChange = (date, field) => {
     setFormData(prev => ({ ...prev, [field]: date }));
     setValidation(prev => ({ ...prev, [field]: date !== null }));
@@ -176,17 +182,17 @@ const CheckIcon = getIcon('check-circle');
       URL.revokeObjectURL(attachmentToRemove.url);
     }
   };
-  
-  // Update form data when project changes
-      // Initialize with project data if available, or defaults for new fields
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
     
     // Validate form fields
     const isNameValid = !!formData.name.trim();
     const isClientValid = !!formData.client.trim();
     const isStartDateValid = formData.startDate !== null;
     const isEndDateValid = true; // Optional field
-    const isManagerValid = !!formData.manager.trim();
-    const isBudgetValid = !!formData.budget.trim() && !isNaN(formData.budget);
+    const isManagerValid = !!formData.manager?.trim();
+    const isBudgetValid = !!formData.budget?.toString().trim() && !isNaN(formData.budget);
     
     setValidation({
       name: isNameValid,
@@ -198,12 +204,7 @@ const CheckIcon = getIcon('check-circle');
     });
     
     if (isNameValid && isClientValid && isStartDateValid && isManagerValid && isBudgetValid) {
-      const updatedProject = {
-        ...formData,
-        id: project.id
-      };
-      
-      onSave(updatedProject);
+      onSave(formData);
       toast.success("Project updated successfully!");
       onClose();
     } else {
@@ -238,66 +239,62 @@ const CheckIcon = getIcon('check-circle');
         </div>
       );
     }
-        priority: project.priority || 'medium',
-        status: project.status || 'pending',
-        budget: project.budget || '',
-        tags: project.tags || [],
-        attachments: project.attachments || []
-      };
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
-    if (project) {
-      setFormData({
-        id: project.id,
-        name: project.name,
-        client: project.client
-      });
-            className="bg-white dark:bg-surface-800 rounded-xl shadow-lg w-full max-w-md"
-  }, [project]);
-    if (['name', 'client', 'manager', 'budget'].includes(name)) {
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-            <div className="flex justify-between items-center p-5 border-b border-surface-200 dark:border-surface-700">
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        >
+            animate={{ scale: 1, y: 0 }}
+          <motion.div
+            className="bg-white dark:bg-surface-800 rounded-xl max-w-md w-full p-6"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+          >
+            <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold">Edit Project</h2>
-    setFormData(prev => ({ ...prev, [field]: date }));
-    setValidation(prev => ({ ...prev, [field]: date !== null }));
-                className="p-1 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700"
-
-  const handleAddTag = () => {
-    if (newTag.trim() !== '' && !formData.tags.includes(newTag.trim())) {
-      setFormData(prev => ({
-        ...prev,
+              <button 
+                onClick={onClose} 
+                className="text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
+                className="p-1 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700 text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
+                <XIcon className="h-5 w-5" />
+              </button>
+            </div>
+            
             <div className="max-h-[70vh] overflow-y-auto p-5">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <h3 className="text-lg font-medium">Basic Information</h3>
-                <div>
                   <label htmlFor="name" className="label">Project Name *</label>
-                  <input
+                  <label htmlFor="name" className="label">Project Name*</label>
                     type="text"
+                  <input
                     id="name"
-                    name="name"
-                    value={formData.name}
+                    type="text"
                     onChange={handleInputChange}
                     className={`input ${!validation.name ? 'border-red-500 dark:border-red-500' : ''}`}
                     placeholder="e.g., Website Redesign"
-                  />
+                    placeholder="Enter project name"
                   {!validation.name && <p className="mt-1 text-sm text-red-500">Project name is required</p>}
+                  {errors.name && <p className="text-red-500 text-sm mt-1">Project name is required</p>}
                 </div>
                 
-                <div>
                   <label htmlFor="client" className="label">Client *</label>
-                  <input
+                <label htmlFor="client" className="label">Client *</label>
                     type="text"
+                  <input
                     id="client"
-                    name="client"
-                    value={formData.client}
+                    type="text"
                     onChange={handleInputChange}
                     className={`input ${!validation.client ? 'border-red-500 dark:border-red-500' : ''}`}
                     placeholder="e.g., Acme Corp"
-                  />
+                    placeholder="Enter client name"
                   {!validation.client && <p className="mt-1 text-sm text-red-500">Client name is required</p>}
                 </div>
-
+                  />
                 <div>
                   <label htmlFor="description" className="label">Description</label>
                   <textarea
@@ -309,7 +306,7 @@ const CheckIcon = getIcon('check-circle');
                     placeholder="Describe the project scope and objectives..."
                   />
                 </div>
-
+              </div>
                 <h3 className="text-lg font-medium mt-6">Timeline & Management</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -335,9 +332,9 @@ const CheckIcon = getIcon('check-circle');
                       minDate={formData.startDate}
                     />
                   </div>
-                </div>
+                  {!validation.startDate && <p className="mt-1 text-sm text-red-500">Start date is required</p>}
 
-                <div>
+                
                   <label htmlFor="manager" className="label">Project Manager *</label>
                   <input
                     type="text"
@@ -347,11 +344,11 @@ const CheckIcon = getIcon('check-circle');
                     onChange={handleInputChange}
                     className={`input ${!validation.manager ? 'border-red-500 dark:border-red-500' : ''}`}
                     placeholder="Name of project manager"
-                  />
+                    minDate={startDate}
                   {!validation.manager && <p className="mt-1 text-sm text-red-500">Project manager is required</p>}
-                </div>
+                  />
 
-                <div>
+                
                   <label className="label">Team Members</label>
                   <div className="flex space-x-2">
                     <input
@@ -388,7 +385,7 @@ const CheckIcon = getIcon('check-circle');
                       ))}
                     </div>
                   )}
-                </div>
+                  </select>
                 
                 <h3 className="text-lg font-medium mt-6">Project Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -425,8 +422,8 @@ const CheckIcon = getIcon('check-circle');
                       ))}
                     </select>
                   </div>
-                </div>
-                
+                  </button>
+                </label>
                 <div>
                   <label htmlFor="budget" className="label">Budget (USD) *</label>
                   <input
@@ -439,7 +436,7 @@ const CheckIcon = getIcon('check-circle');
                     placeholder="e.g., 5000"
                   />
                   {!validation.budget && <p className="mt-1 text-sm text-red-500">Valid budget amount is required</p>}
-                </div>
+                  {errors.client && <p className="text-red-500 text-sm mt-1">Client name is required</p>}
 
                 <div>
                   <label className="label">Tags</label>
@@ -513,404 +510,15 @@ const CheckIcon = getIcon('check-circle');
 
                 <div className="mt-6 flex justify-end space-x-3">
                   <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
-                  <button type="submit" className="btn-primary">Save Changes</button>
+                  <button type="submit" className="btn-primary">
+                    <CheckIcon className="h-5 w-5 mr-2" />
+                    Save Changes
+                  </button>
                 </div>
               </form>
             </div>
-    URL.revokeObjectURL(attachmentToRemove.url);
-  };
-
-      [name]: value
-    });
-    
-    // Clear validation error when user types
-    if (value.trim()) {
-      setErrors({
-    const isStartDateValid = formData.startDate !== null;
-    const isEndDateValid = true; // Optional field
-    const isManagerValid = !!formData.manager?.trim();
-    const isBudgetValid = !!formData.budget?.toString().trim() && !isNaN(formData.budget);
-        ...errors,
-        [name]: false
-      });
-      client: isClientValid,
-      startDate: isStartDateValid,
-      endDate: isEndDateValid,
-      manager: isManagerValid,
-      budget: isBudgetValid
-  };
-
-    if (isNameValid && isClientValid && isStartDateValid && isManagerValid && isBudgetValid) {
-    e.preventDefault();
-    
-    // Validate form
-    const newErrors = {
-      name: !formData.name.trim(),
-        description: formData.description.trim(),
-        manager: formData.manager.trim(),
-        budget: formData.budget,
-    };
-    
-    setErrors(newErrors);
-    
-    // If there are no errors, save the project
-    if (!newErrors.name && !newErrors.client) {
-      toast.error("Please fill in all required fields correctly.");
-    }
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + ' bytes';
-    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-    else return (bytes / 1048576).toFixed(1) + ' MB';
-  };
-
-  const isImageFile = (file) => {
-    return file.type?.startsWith('image/');
-  };
-
-  // Function to render file preview
-  const renderFilePreview = (attachment) => {
-    if (isImageFile(attachment)) {
-      return (
-        <div className="relative w-16 h-16 rounded overflow-hidden">
-          <img src={attachment.url} alt={attachment.name} className="w-full h-full object-cover" />
-        </div>
-      );
-    } else {
-      // For non-image files show an icon
-      const FileIcon = getIcon('file');
-      return (
-        <div className="relative w-16 h-16 flex items-center justify-center bg-surface-100 dark:bg-surface-700 rounded">
-          <FileIcon className="w-8 h-8 text-surface-500" />
-        </div>
-      );
-      onClose();
-    } else {
-      toast.error("Please fill in all required fields");
-  // Clean up created object URLs on component unmount
-  useEffect(() => {
-    return () => {
-      if (formData.attachments) {
-        formData.attachments.forEach(attachment => {
-          if (attachment.url) {
-            URL.revokeObjectURL(attachment.url);
-          }
-        });
-      }
-    };
-  }, []);
-
-  // Helper function to handle null or undefined arrays
-  const safeArray = (arr) => {
-    return Array.isArray(arr) ? arr : [];
-  };
-
-  // Safe access to avoid errors with undefined properties
-  const {
-    id, name, client, description, startDate, endDate, 
-    manager, priority, status, budget
-  } = formData;
-  
-  const teamMembers = safeArray(formData.teamMembers);
-  const tags = safeArray(formData.tags);
-  const attachments = safeArray(formData.attachments);
-
-    }
-  };
-
-  return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-            animate={{ scale: 1, y: 0 }}
-            className="bg-white dark:bg-surface-800 rounded-xl max-w-md w-full p-6"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-          >
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Edit Project</h2>
-              <button 
-                onClick={onClose} 
-                className="text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
-              >
-                <XIcon className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="max-h-[70vh] overflow-y-auto p-5">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <h3 className="text-lg font-medium">Basic Information</h3>
-                <div>
-                <div>
-                  <label htmlFor="name" className="label">Project Name*</label>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className={`input ${errors.name ? 'border-red-500' : ''}`}
-                    placeholder="Enter project name"
-                  />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">Project name is required</p>}
-                </div>
-                
-                <div>
-                <label htmlFor="client" className="label">Client *</label>
-                  <input
-                    id="client"
-                    name="client"
-                    type="text"
-                    value={formData.client}
-                    onChange={handleChange}
-                    className={`input ${errors.client ? 'border-red-500' : ''}`}
-                    placeholder="Enter client name"
-                  />
-
-              <div>
-                <label htmlFor="description" className="label">Description</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={description || ''}
-                  onChange={handleInputChange}
-                  className="input h-24"
-                  placeholder="Describe the project scope and objectives..."
-                />
-              </div>
-
-              <h3 className="text-lg font-medium mt-6">Timeline & Management</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Start Date *</label>
-                  <DatePicker
-                    selected={startDate}
-                    onChange={(date) => handleDateChange(date, 'startDate')}
-                    className={`input ${!validation.startDate ? 'border-red-500 dark:border-red-500' : ''}`}
-                    placeholderText="Select start date"
-                    dateFormat="MMMM d, yyyy"
-                  />
-                  {!validation.startDate && <p className="mt-1 text-sm text-red-500">Start date is required</p>}
-                </div>
-                
-                <div>
-                  <label className="label">End Date</label>
-                  <DatePicker
-                    selected={endDate}
-                    onChange={(date) => handleDateChange(date, 'endDate')}
-                    className="input"
-                    placeholderText="Select end date"
-                    dateFormat="MMMM d, yyyy"
-                    minDate={startDate}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="manager" className="label">Project Manager *</label>
-                <input
-                  type="text"
-                  id="manager"
-                  name="manager"
-                  value={manager || ''}
-                  onChange={handleInputChange}
-                  className={`input ${!validation.manager ? 'border-red-500 dark:border-red-500' : ''}`}
-                  placeholder="Name of project manager"
-                />
-                {!validation.manager && <p className="mt-1 text-sm text-red-500">Project manager is required</p>}
-              </div>
-
-              <div>
-                <label className="label">Team Members</label>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={newTeamMember}
-                    onChange={(e) => setNewTeamMember(e.target.value)}
-                    className="input flex-1"
-                    placeholder="Add team member"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddTeamMember}
-                    className="btn-primary px-3"
-                  >
-                    Add
-                  </button>
-                </div>
-                {teamMembers.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {teamMembers.map((member, index) => (
-                      <div 
-                        key={index}
-                        className="bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-3 py-1 rounded-full flex items-center text-sm"
-                      >
-                        <span>{member}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTeamMember(member)}
-                          className="ml-1.5 text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200"
-                        >
-                          <XIcon className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              <h3 className="text-lg font-medium mt-6">Project Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="status" className="label">Status</label>
-                  <select
-                    id="status"
-                    name="status"
-                    value={status || 'pending'}
-                    onChange={handleInputChange}
-                    className="input"
-                  >
-                    {statusOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                <div>
-                  <label htmlFor="priority" className="label">Priority</label>
-                  <select
-                    id="priority"
-                    name="priority"
-                    value={priority || 'medium'}
-                    onChange={handleInputChange}
-                    className="input"
-                  >
-                    {priorityOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="budget" className="label">Budget (USD) *</label>
-                <input
-                  type="text"
-                  id="budget"
-                  name="budget"
-                  value={budget || ''}
-                  onChange={handleInputChange}
-                  className={`input ${!validation.budget ? 'border-red-500 dark:border-red-500' : ''}`}
-                  placeholder="e.g., 5000"
-                />
-                {!validation.budget && <p className="mt-1 text-sm text-red-500">Valid budget amount is required</p>}
-              </div>
-
-              <div>
-                <label className="label">Tags</label>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={newTag}
-                    onChange={(e) => setNewTag(e.target.value)}
-                    className="input flex-1"
-                    placeholder="Add tag"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddTag}
-                    className="btn-primary px-3"
-                  >
-                    Add
-                  </button>
-                </div>
-                {tags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {tags.map((tag, index) => (
-                      <div 
-                        key={index}
-                        className="bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-3 py-1 rounded-full flex items-center text-sm"
-                      >
-                        <span>{tag}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(tag)}
-                          className="ml-1.5 text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-200"
-                        >
-                          <XIcon className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="label">Attachments</label>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label htmlFor="file-upload" className="btn-ghost w-full flex justify-center items-center p-3 border-2 border-dashed border-surface-300 dark:border-surface-600 rounded-lg cursor-pointer">
-                  <span>Click to upload files</span>
-                </label>
-                
-                {attachments.length > 0 && (
-                  <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {attachments.map((attachment, index) => (
-                      <div key={index} className="relative group">
-                        {renderFilePreview(attachment)}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded flex items-center justify-center">
-                          <button type="button" onClick={() => handleRemoveAttachment(attachment)} className="text-white p-1.5 bg-red-500 rounded-full hover:bg-red-600">
-                            <XIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <p className="text-xs truncate mt-1">{attachment.name}</p>
-                        <p className="text-xs text-surface-500">{formatFileSize(attachment.size)}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-                  {errors.client && <p className="text-red-500 text-sm mt-1">Client name is required</p>}
-                </div>
-              </div>
-                <button type="submit" className="btn-primary">
-                  Update Project
-                </button>
-              <div className="mt-6 flex justify-end">
-                <button
-            </div>
-                  type="button"
-                  onClick={onClose}
-                  className="btn-ghost mr-2"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary"
-                >
-                  <CheckIcon className="h-5 w-5 mr-2" />
-                  Save Changes
-                </button>
-              </div>
             </form>
-          </motion.div>
+        </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
