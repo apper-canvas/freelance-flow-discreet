@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-toastify';
@@ -39,7 +39,6 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
     budget: true
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  });
 
   const [newTag, setNewTag] = useState('');
   const [newTeamMember, setNewTeamMember] = useState('');
@@ -323,28 +322,26 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                     placeholder="e.g., Website Redesign"
                   />
                   {!validation.name && <p className="mt-1 text-sm text-red-500">Project name is required</p>}
-                  <input
-                
+                </div>
+
                 <div>
                   <label htmlFor="client" className="label">Client *</label>
                   <input
-                    type="text"
-                    className={`input ${!validation.name ? 'border-red-500 dark:border-red-500' : ''}`}
+                    type="text" 
+                    id="client"
                     name="client"
-                    disabled={isSubmitting}
                     value={formData.client}
                     onChange={handleInputChange}
+                    disabled={isSubmitting}
                     className={`input ${!validation.client ? 'border-red-500 dark:border-red-500' : ''}`}
                     placeholder="e.g., Acme Corp"
-                <div>
-                  <label htmlFor="client" className="label">
-                    Client * 
-                    {loadingClients && (
-                      <span className="ml-2 inline-block animate-pulse text-surface-400 text-sm">
-                        Loading clients...
-                      </span>
-                    )}
-                  </label>
+                  />
+                  {loadingClients && (
+                    <span className="ml-2 inline-block animate-pulse text-surface-400 text-sm">
+                      Loading clients...
+                    </span>
+                  )}
+                  {!validation.client && <p className="mt-1 text-sm text-red-500">Client name is required</p>}
                 </div>
 
                 <div>
@@ -366,7 +363,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                     <label className="label">Start Date *</label>
                     <DatePicker
                       selected={formData.startDate}
-                    disabled={isSubmitting}
+                      disabled={isSubmitting}
                       onChange={(date) => handleDateChange(date, 'startDate')}
                       className={`input ${!validation.startDate ? 'border-red-500 dark:border-red-500' : ''}`}
                       placeholderText="Select start date"
@@ -378,26 +375,26 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                   <div>
                     <label className="label">End Date</label>
                     <DatePicker
-                    selected={formData.endDate}
+                      selected={formData.endDate}
                       disabled={isSubmitting}
-                    onChange={(date) => handleDateChange(date, 'endDate')}
-                    className="input"
-                    placeholderText="Select end date"
-                    dateFormat="MMMM d, yyyy"
-                    minDate={formData.startDate}
-                  />
+                      onChange={(date) => handleDateChange(date, 'endDate')}
+                      className="input"
+                      placeholderText="Select end date"
+                      dateFormat="MMMM d, yyyy"
+                      minDate={formData.startDate}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <label htmlFor="manager" className="label">Project Manager *</label>
-                    disabled={isSubmitting}
+                <div>
+                  <label htmlFor="manager" className="label">Project Manager *</label>
                 <input
                   type="text"
                   id="manager"
                   name="manager"
                   value={formData.manager}
                   onChange={handleInputChange}
+                  disabled={isSubmitting}
                   className={`input ${!validation.manager ? 'border-red-500 dark:border-red-500' : ''}`}
                   placeholder="Name of project manager"
                 />
@@ -408,7 +405,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                 <label className="label">Team Members</label>
                 <div className="flex space-x-2">
                   <input
-                  disabled={isSubmitting}
+                    disabled={isSubmitting}
                     type="text"
                     value={newTeamMember}
                     onChange={(e) => setNewTeamMember(e.target.value)}
@@ -418,16 +415,16 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                   <button
                     type="button"
                     onClick={handleAddTeamMember}
-                    className="btn-primary px-3"
+                    disabled={isSubmitting}
+                    className={`btn-primary px-3 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     Add
-                    disabled={isSubmitting}
                   </button>
                 </div>
                 {formData.teamMembers.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    className={`btn-primary px-3 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      <div 
+                    {formData.teamMembers.map((member, index) => (
+                      <div
                         key={index}
                         className="bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-3 py-1 rounded-full flex items-center text-sm"
                       >
@@ -513,7 +510,8 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                   <button
                     type="button"
                     onClick={handleAddTag}
-                    className="btn-primary px-3"
+                    disabled={isSubmitting}
+                    className={`btn-primary px-3 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     Add
                   </button>
