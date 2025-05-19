@@ -30,3 +30,9 @@ export const getIcon = (iconName) => {
   // Fallback to Smile if icon not found
   return Icons.Smile;
 };
+
+// Export common icons for direct import
+export const FileIcon = Icons.File;
+export const EyeIcon = Icons.Eye;
+export const PlusIcon = Icons.Plus;
+export const XIcon = Icons.X;

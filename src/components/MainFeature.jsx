@@ -1,8 +1,7 @@
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import { toast } from 'react-toastify';
-import { format } from 'date-fns';
+import { toast } from 'react-toastify'; 
 import { getIcon } from '../utils/iconUtils';
 import EditProjectModal from './EditProjectModal';
 
@@ -13,6 +12,7 @@ const PlayIcon = getIcon('play');
 const PauseIcon = getIcon('pause');
 const StopIcon = getIcon('square');
 const PlusIcon = getIcon('plus');
+const EyeIcon = getIcon('eye');
 const TrashIcon = getIcon('trash-2');
 const EditIcon = getIcon('edit');
 
@@ -40,8 +40,8 @@ const initialTimeEntries = [
 ];
 
 const initialProjects = [
-  { id: 1, name: 'Website Redesign', client: 'Acme Corp' },
-  { id: 2, name: 'Mobile App', client: 'TechStart' },
+  { id: 1, name: 'Website Redesign', client: 'Acme Corp', startDate: new Date(), manager: 'John Doe', status: 'in-progress', priority: 'high', budget: 15000, description: 'Complete website redesign with new branding' },
+  { id: 2, name: 'Mobile App', client: 'TechStart', startDate: new Date(), manager: 'Jane Smith', status: 'pending', priority: 'medium', budget: 25000, description: 'New mobile app for iOS and Android platforms' },
   { id: 3, name: 'Logo Design', client: 'Local Cafe' },
 ];
 
@@ -54,15 +54,7 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     task: '',
     description: '',
   });
-  const [newProject, setNewProject] = useState({
-    id: null,
-    name: '',
-    project: '',
-    task: '',
-    description: '',
-  });
-  const [selectedProject, setSelectedProject] = useState('');
-  const [timer, setTimer] = useState(0);
+  const [timer, setTimer] = useState(0); 
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [validation, setValidation] = useState({
     project: true,
@@ -71,6 +63,13 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
+
+  const openEditModal = (project) => {
+    setCurrentProject(project);
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => setIsEditModalOpen(false);
   // Helper function to format dates
   const formatDate = (date) => {
     if (!date) return 'Not set';
@@ -126,13 +125,31 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     return members.join(', ');
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewEntry(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   
   // Expose the addProject method through the ref
   useImperativeHandle(ref, () => ({
     addProject
   }));
 
+  const handleViewProject = (project) => {
+    toast.info(`Viewing project: ${project.name}`);
+  };
 
+  const handleEditProject = (project) => {
+    openEditModal(project);
+  };
+  
+  const handleDeleteProject = (id) => {
+    toast.info("Delete functionality will be implemented soon");
+  };
 
   useEffect(() => {
     let interval = null;
@@ -153,95 +170,17 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     
     return [
       hours.toString().padStart(2, '0'),
-                  className="card flex flex-col p-5"
+      minutes.toString().padStart(2, '0'),
       seconds.toString().padStart(2, '0'),
-                  <div className="flex flex-col md:flex-row justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold">{project.name}</h3>
-                      <p className="text-surface-600 dark:text-surface-300 mt-1">Client: {project.client}</p>
-                    </div>
-                    <div className="flex space-x-2 mt-4 md:mt-0">
-                      <button
-                        className="btn-ghost px-3 py-1.5 text-sm"
-                        onClick={() => handleViewProject(project)}
-                      >
-                        <EyeIcon className="h-4 w-4 mr-1.5" />
-                        View
-                      </button>
-                      <button
-                        className="btn-ghost px-3 py-1.5 text-sm"
-                        onClick={() => handleEditProject(project)}
-                      >
-                        <EditIcon className="h-4 w-4 mr-1.5" />
-                        Edit
-                      </button>
-                      <button
-                        className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 px-3 py-1.5 rounded-lg text-sm"
-                        onClick={() => handleDeleteProject(project.id)}
-                      >
-                        <TrashIcon className="h-4 w-4 mr-1.5" />
-                        Delete
-                      </button>
-                    </div>
-                  </div>
+    ].join(':');
+  };
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <div className="text-sm">
-                      <span className="block text-surface-500 dark:text-surface-400">Timeline:</span>
-                      <span>{formatDate(project.startDate)} - {project.endDate ? formatDate(project.endDate) : 'Ongoing'}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="block text-surface-500 dark:text-surface-400">Manager:</span>
-                      <span>{project.manager || 'Not assigned'}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="block text-surface-500 dark:text-surface-400">Budget:</span>
-                      <span>{formatCurrency(project.budget)}</span>
-                    </div>
-                    <div className="text-sm">
-                      <span className="block text-surface-500 dark:text-surface-400">Team:</span>
-                      <span className="truncate">{getTeamMembersDisplay(project.teamMembers)}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
-                      {project.status ? project.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Pending'}
-                    </div>
-                    <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${getPriorityColor(project.priority)}`}>
-                      {project.priority ? project.priority.charAt(0).toUpperCase() + project.priority.slice(1) : 'Medium'} Priority
-                    </div>
-                    {project.tags && project.tags.map((tag, index) => (
-                      <div key={index} className="bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-2.5 py-1 rounded-full text-xs">
-                        {tag}
-                      </div>
-                    ))}
-    const { name, value } = e.target;
-
-                  {project.description && (
-                    <div className="mt-2">
-                      <p className="text-surface-600 dark:text-surface-300 text-sm">{project.description}</p>
-                    </div>
-                  )}
-
-                  {project.attachments && project.attachments.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-xs text-surface-500 mb-2">Attachments ({project.attachments.length})</p>
-                      <div className="flex flex-wrap gap-2">
-                        {project.attachments.slice(0, 3).map((attachment, index) => (
-                          <div key={index} className="flex items-center text-xs bg-surface-100 dark:bg-surface-700 rounded px-2 py-1">
-                            <FileIcon className="h-3 w-3 mr-1" />
-                            <span className="truncate max-w-[100px]">{attachment.name}</span>
-                          </div>
-                        ))}
-                        {project.attachments.length > 3 && (
-                          <div className="text-xs bg-surface-100 dark:bg-surface-700 rounded px-2 py-1">
-                            +{project.attachments.length - 3} more
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
+  const startTimer = () => {
+    // Validate fields
+    const isProjectValid = !!newEntry.project;
+    const isTaskValid = !!newEntry.task;
+    const isDescriptionValid = !!newEntry.description;
+    
     setValidation({
       project: isProjectValid,
       task: isTaskValid,
@@ -295,7 +234,21 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
   };
 
   const addProject = (project) => {
-    setProjects(prev => [{id: project.id, name: project.name, client: project.client}, ...prev]);
+    setProjects(prev => [{
+      id: project.id,
+      name: project.name,
+      client: project.client,
+      description: project.description,
+      startDate: project.startDate,
+      endDate: project.endDate,
+      manager: project.manager,
+      teamMembers: project.teamMembers,
+      priority: project.priority,
+      status: project.status,
+      budget: project.budget,
+      tags: project.tags,
+      attachments: project.attachments
+    }, ...prev]);
     toast.success(`Project "${project.name}" created successfully!`);
   };
 
@@ -306,8 +259,18 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
           proj.id === updatedProject.id 
           ? { 
               ...proj, 
-              name: updatedProject.name, 
-              client: updatedProject.client 
+              name: updatedProject.name,
+              client: updatedProject.client,
+              description: updatedProject.description,
+              startDate: updatedProject.startDate,
+              endDate: updatedProject.endDate,
+              manager: updatedProject.manager,
+              teamMembers: updatedProject.teamMembers,
+              priority: updatedProject.priority,
+              status: updatedProject.status,
+              budget: updatedProject.budget,
+              tags: updatedProject.tags,
+              attachments: updatedProject.attachments
             } 
           : proj
         )
@@ -338,30 +301,96 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
                 transition={{ layout: { duration: 0.3 } }}
               />
               
-              <motion.div 
-                className="neu-card hover:shadow-hover-float"
-                whileHover={{ 
-                  y: -8,
-                  transition: { duration: 0.4, ease: [0.25, 1, 0.5, 1] }
-                }}
-              >
-              <div className="absolute top-0 right-0 h-20 w-20 bg-gradient-to-br from-primary-200/40 to-primary-500/40 dark:from-primary-900/30 dark:to-primary-800/30 rounded-tr-2xl rounded-bl-3xl -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              
-              <h3 className="text-xl font-semibold mb-2 text-primary-800 dark:text-primary-300">{project.name}</h3>
-              <p className="text-surface-500 dark:text-surface-400 text-sm mb-4">Client: {project.client}</p>
-              <div className="mt-auto flex justify-end space-x-2">
-                <button 
-                  onClick={() => openEditModal(project)}
-                  className="p-2 text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
-                >
-                  <EditIcon className="h-5 w-5" title="Edit project" />
-                </button>
+              <div className="neu-card flex flex-col p-5">
+                <div className="flex flex-col md:flex-row justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold">{project.name}</h3>
+                    <p className="text-surface-600 dark:text-surface-300 mt-1">Client: {project.client}</p>
+                  </div>
+                  <div className="flex space-x-2 mt-4 md:mt-0">
+                    <button
+                      className="btn-ghost px-3 py-1.5 text-sm"
+                      onClick={() => handleViewProject(project)}
+                    >
+                      <EyeIcon className="h-4 w-4 mr-1.5" />
+                      View
+                    </button>
+                    <button
+                      className="btn-ghost px-3 py-1.5 text-sm"
+                      onClick={() => handleEditProject(project)}
+                    >
+                      <EditIcon className="h-4 w-4 mr-1.5" />
+                      Edit
+                    </button>
+                    <button
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 px-3 py-1.5 rounded-lg text-sm"
+                      onClick={() => handleDeleteProject(project.id)}
+                    >
+                      <TrashIcon className="h-4 w-4 mr-1.5" />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                  <div className="text-sm">
+                    <span className="block text-surface-500 dark:text-surface-400">Timeline:</span>
+                    <span>{formatDate(project.startDate)} - {project.endDate ? formatDate(project.endDate) : 'Ongoing'}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="block text-surface-500 dark:text-surface-400">Manager:</span>
+                    <span>{project.manager || 'Not assigned'}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="block text-surface-500 dark:text-surface-400">Budget:</span>
+                    <span>{formatCurrency(project.budget)}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="block text-surface-500 dark:text-surface-400">Team:</span>
+                    <span className="truncate">{getTeamMembersDisplay(project.teamMembers)}</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
+                    {project.status ? project.status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Pending'}
+                  </div>
+                  <div className={`px-2.5 py-1 rounded-full text-xs font-medium ${getPriorityColor(project.priority)}`}>
+                    {project.priority ? project.priority.charAt(0).toUpperCase() + project.priority.slice(1) : 'Medium'} Priority
+                  </div>
+                  {project.tags && project.tags.map((tag, index) => (
+                    <div key={index} className="bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-2.5 py-1 rounded-full text-xs">
+                      {tag}
+                    </div>
+                  ))}
+                </div>
+
+                {project.description && (
+                  <div className="mt-2">
+                    <p className="text-surface-600 dark:text-surface-300 text-sm">{project.description}</p>
+                  </div>
+                )}
+
+                {project.attachments && project.attachments.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-xs text-surface-500 mb-2">Attachments ({project.attachments.length})</p>
+                    <div className="flex flex-wrap gap-2">
+                      {project.attachments.slice(0, 3).map((attachment, index) => (
+                        <div key={index} className="flex items-center text-xs bg-surface-100 dark:bg-surface-700 rounded px-2 py-1">
+                          <FileIcon className="h-3 w-3 mr-1" />
+                          <span className="truncate max-w-[100px]">{attachment.name}</span>
+                        </div>
+                      ))}
+                      {project.attachments.length > 3 && (
+                        <div className="text-xs bg-surface-100 dark:bg-surface-700 rounded px-2 py-1">
+                          +{project.attachments.length - 3} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-              
-              {/* Decorative elements */}
-              <div className="absolute -bottom-2 -right-2 h-12 w-12 rounded-full bg-secondary-100/30 dark:bg-secondary-900/30 -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </motion.div>
-            </motion.div>
+             </motion.div>
           ))}
           <motion.div 
             className="glass-card border-2 border-dashed border-surface-200 dark:border-surface-700 flex flex-col items-center justify-center cursor-pointer h-full min-h-[180px] relative overflow-hidden group"

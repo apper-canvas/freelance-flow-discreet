@@ -21,8 +21,8 @@ export default {
           900: '#312e81',
           950: '#1e1b4b'
         },
-        },
         accent: '#f59e0b',
+        
         surface: {
           50: '#f8fafc',
           100: '#f1f5f9',
@@ -47,6 +47,7 @@ export default {
             end: '#3b0764'
           }
         }
+        ,
         secondary: {
           DEFAULT: '#14b8a6',
           50: '#f0fdfa',

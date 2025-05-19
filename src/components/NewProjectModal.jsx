@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-toastify';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { format } from 'date-fns';
-import { getIcon } from '../utils/iconUtils';
+import { getIcon } from '../utils/iconUtils'; 
 
 const XIcon = getIcon('x');
 
@@ -48,7 +49,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
     { value: 'medium', label: 'Medium' },
     { value: 'high', label: 'High' },
     { value: 'urgent', label: 'Urgent' }
-  });
+  ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -103,7 +104,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
     const files = Array.from(e.target.files);
     
     // Create URL objects for previews
-    const newAttachments = files.map(file => ({
+    const newAttachments = files.map(file => ({ 
       name: file.name,
       type: file.type,
       size: file.size,
@@ -217,6 +218,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
         <div className="relative w-16 h-16 rounded overflow-hidden">
           <img src={attachment.url} alt={attachment.name} className="w-full h-full object-cover" />
         </div>
+        
       );
     } else {
       // For non-image files show an icon
@@ -228,6 +230,12 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
       );
     }
   };
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop: acceptedFiles => {
+      handleFileChange({ target: { files: acceptedFiles } });
+    }
+  });
 
   return (
     <AnimatePresence>
@@ -259,59 +267,63 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
             <div className="max-h-[70vh] overflow-y-auto p-5">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <h3 className="text-lg font-medium">Basic Information</h3>
-              <div>
-                <label htmlFor="name" className="label">Project Name *</label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className={`input ${!validation.name ? 'border-red-500 dark:border-red-500' : ''}`}
-                  placeholder="e.g., Website Redesign"
-                />
-                {!validation.name && <p className="mt-1 text-sm text-red-500">Project name is required</p>}
-              </div>
-              
-              <div>
-                <label htmlFor="client" className="label">Client *</label>
-                <input
-                  type="text"
-                  id="client"
-                  name="client"
-                  value={formData.client}
-                  onChange={handleInputChange}
-                  className={`input ${!validation.client ? 'border-red-500 dark:border-red-500' : ''}`}
-
-              <div>
-                <label htmlFor="description" className="label">Description</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="input h-24"
-                  placeholder="Describe the project scope and objectives..."
-                />
-              </div>
-
-              <h3 className="text-lg font-medium mt-6">Timeline & Management</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Start Date *</label>
-                  <DatePicker
-                    selected={formData.startDate}
-                    onChange={(date) => handleDateChange(date, 'startDate')}
-                    className={`input ${!validation.startDate ? 'border-red-500 dark:border-red-500' : ''}`}
-                    placeholderText="Select start date"
-                    dateFormat="MMMM d, yyyy"
+                  <label htmlFor="name" className="label">Project Name *</label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className={`input ${!validation.name ? 'border-red-500 dark:border-red-500' : ''}`}
+                    placeholder="e.g., Website Redesign"
                   />
-                  {!validation.startDate && <p className="mt-1 text-sm text-red-500">Start date is required</p>}
+                  {!validation.name && <p className="mt-1 text-sm text-red-500">Project name is required</p>}
                 </div>
                 
                 <div>
-                  <label className="label">End Date</label>
-                  <DatePicker
+                  <label htmlFor="client" className="label">Client *</label>
+                  <input
+                    type="text"
+                    id="client"
+                    name="client"
+                    value={formData.client}
+                    onChange={handleInputChange}
+                    className={`input ${!validation.client ? 'border-red-500 dark:border-red-500' : ''}`}
+                    placeholder="e.g., Acme Corp"
+                  />
+                  {!validation.client && <p className="mt-1 text-sm text-red-500">Client name is required</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="description" className="label">Description</label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    className="input h-24"
+                    placeholder="Describe the project scope and objectives..."
+                  />
+                </div>
+
+                <h3 className="text-lg font-medium mt-6">Timeline & Management</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">Start Date *</label>
+                    <DatePicker
+                      selected={formData.startDate}
+                      onChange={(date) => handleDateChange(date, 'startDate')}
+                      className={`input ${!validation.startDate ? 'border-red-500 dark:border-red-500' : ''}`}
+                      placeholderText="Select start date"
+                      dateFormat="MMMM d, yyyy"
+                    />
+                    {!validation.startDate && <p className="mt-1 text-sm text-red-500">Start date is required</p>}
+                  </div>
+                  
+                  <div>
+                    <label className="label">End Date</label>
+                    <DatePicker
                     selected={formData.endDate}
                     onChange={(date) => handleDateChange(date, 'endDate')}
                     className="input"
@@ -468,16 +480,16 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
               <div>
                 <label className="label">Attachments</label>
                 <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="hidden"
-                  id="file-upload"
+                  {...getInputProps()}
+                  id="file-upload" 
                 />
-                <label htmlFor="file-upload" className="btn-ghost w-full flex justify-center items-center p-3 border-2 border-dashed border-surface-300 dark:border-surface-600 rounded-lg cursor-pointer">
-                  <span>Click to upload files</span>
-                </label>
-                
+                <div 
+                  {...getRootProps()}
+                  className="btn-ghost w-full flex justify-center items-center p-3 border-2 border-dashed border-surface-300 dark:border-surface-600 rounded-lg cursor-pointer"
+                >
+                  <span>Drag & drop files here, or click to select files</span>
+                </div>
+                  
                 {formData.attachments.length > 0 && (
                   <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {formData.attachments.map((attachment, index) => (
@@ -495,18 +507,11 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                   </div>
                 )}
               </div>
-                  placeholder="e.g., Acme Corp"
-                />
-                {!validation.client && <p className="mt-1 text-sm text-red-500">Client name is required</p>}
-                <button type="submit" className="btn-primary">
-                  Create Project
-                </button>
-              
               <div className="mt-6 flex justify-end space-x-3">
-            </div>
                 <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
                 <button type="submit" className="btn-primary">Create Project</button>
               </div>
+            </form>
             </form>
           </motion.div>
         </motion.div>
