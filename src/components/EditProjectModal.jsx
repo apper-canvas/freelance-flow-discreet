@@ -5,6 +5,8 @@ import { useDropzone } from 'react-dropzone';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { getIcon } from '../utils/iconUtils';
+import projectService from '../services/projectService';
+import attachmentService from '../services/attachmentService';
 
 // Import icons
 const CheckIcon = getIcon('check-circle');
@@ -26,6 +28,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
     tags: project?.tags || [],
     attachments: project?.attachments || []
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [errors, setErrors] = useState({
     name: false,
@@ -181,7 +184,8 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
       URL.revokeObjectURL(attachmentToRemove.url);
     }
   };
-
+  const handleSubmit = async (e) => {
+    setIsSubmitting(true);
   const handleSubmit = (e) => {
     e.preventDefault();
     
@@ -203,11 +207,50 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
     });
     
     if (isNameValid && isClientValid && isStartDateValid && isManagerValid && isBudgetValid) {
-      onSave(formData);
-      toast.success("Project updated successfully!");
-      onClose();
+      try {
+        // Format the project data for the API
+        const projectData = {
+          Name: formData.name,
+          client: formData.client,
+          description: formData.description,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          manager: formData.manager,
+          priority: formData.priority,
+          status: formData.status,
+          budget: formData.budget,
+          Tags: formData.tags ? formData.tags.join(',') : ''
+        };
+        
+        // Update in the database
+        await projectService.updateProject(formData.id, projectData);
+        
+        // Process attachments
+        // For simplicity, we'll handle only new attachments here
+        const newAttachments = formData.attachments.filter(att => att.file);
+        
+        if (newAttachments.length > 0) {
+          for (const attachment of newAttachments) {
+            if (attachment.file) {
+              await attachmentService.uploadAttachment(attachment.file, formData.id);
+            }
+          }
+        }
+        
+        // Pass the updated data back to the parent component
+        onSave(formData);
+        
+        toast.success("Project updated successfully!");
+        onClose();
+      } catch (error) {
+        console.error("Error updating project:", error);
+        toast.error("Failed to update project. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
       toast.error("Please fill in all required fields correctly.");
+      setIsSubmitting(false);
     }
   };
   
@@ -278,6 +321,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                    value={formData.name}
                     onChange={handleInputChange}
                     className={`input ${!validation.name ? 'border-red-500 dark:border-red-500' : ''}`}
+                    disabled={isSubmitting}
                     placeholder="Enter project name"
                  />
                  {!validation.name && <p className="mt-1 text-sm text-red-500">Project name is required</p>}
@@ -291,6 +335,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                     name="client"
                    value={formData.client}
                     onChange={handleInputChange}
+                    disabled={isSubmitting}
                     className={`input ${!validation.client ? 'border-red-500 dark:border-red-500' : ''}`}
                     placeholder="Enter client name"
                  />
@@ -304,6 +349,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                    name="description"
                    value={formData.description}
                    onChange={handleInputChange}
+                   disabled={isSubmitting}
                    className="input h-24"
                    placeholder="Describe the project scope and objectives..."
                  />
@@ -316,6 +362,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                    <DatePicker
                      selected={formData.startDate}
                      onChange={(date) => handleDateChange(date, 'startDate')}
+                     disabled={isSubmitting}
                      className={`input ${!validation.startDate ? 'border-red-500 dark:border-red-500' : ''}`}
                      placeholderText="Select start date"
                      dateFormat="MMMM d, yyyy"
@@ -328,6 +375,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                    <DatePicker
                      selected={formData.endDate}
                      onChange={(date) => handleDateChange(date, 'endDate')}
+                     disabled={isSubmitting}
                      className="input"
                      placeholderText="Select end date"
                      dateFormat="MMMM d, yyyy"
@@ -343,6 +391,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                     id="manager"
                     name="manager"
                     value={formData.manager}
+                    disabled={isSubmitting}
                     onChange={handleInputChange}
                     className={`input ${!validation.manager ? 'border-red-500 dark:border-red-500' : ''}`}
                     placeholder="Name of project manager"
@@ -357,6 +406,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                       type="text"
                       value={newTeamMember}
                       onChange={(e) => setNewTeamMember(e.target.value)}
+                      disabled={isSubmitting}
                       className="input flex-1"
                       placeholder="Add team member"
                     />
@@ -396,6 +446,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                       id="status"
                       name="status"
                       value={formData.status}
+                      disabled={isSubmitting}
                       onChange={handleInputChange}
                       className="input"
                     >
@@ -413,6 +464,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                       id="priority"
                       name="priority"
                       value={formData.priority}
+                      disabled={isSubmitting}
                       onChange={handleInputChange}
                       className="input"
                     >
@@ -430,6 +482,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                     id="budget"
                     name="budget"
                     value={formData.budget}
+                    disabled={isSubmitting}
                     onChange={handleInputChange}
                     className={`input ${!validation.budget ? 'border-red-500 dark:border-red-500' : ''}`}
                     placeholder="e.g., 5000"
@@ -444,6 +497,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
                     <input
                       type="text"
                       value={newTag}
+                      disabled={isSubmitting}
                       onChange={(e) => setNewTag(e.target.value)}
                       className="input flex-1"
                       placeholder="Add tag"
@@ -511,7 +565,7 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
               
                 <div className="mt-6 flex justify-end space-x-3">
                   <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
-                  <button type="submit" className="btn-primary">
+                  <button type="submit" className={`btn-primary ${isSubmitting ? 'opacity-70 cursor-wait' : ''}`} disabled={isSubmitting}>
                     <CheckIcon className="h-5 w-5 mr-2" />
                     Save Changes
                   </button>

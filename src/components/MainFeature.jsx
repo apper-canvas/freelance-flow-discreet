@@ -2,6 +2,11 @@ import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { toast } from 'react-toastify'; 
+import projectService from '../services/projectService';
+import timeEntryService from '../services/timeEntryService';
+import clientService from '../services/clientService';
+import teamMemberService from '../services/teamMemberService';
+import attachmentService from '../services/attachmentService';
 import { getIcon, FileIcon } from '../utils/iconUtils';
 import EditProjectModal from './EditProjectModal';
 
@@ -16,39 +21,21 @@ const EyeIcon = getIcon('eye');
 const TrashIcon = getIcon('trash-2');
 const EditIcon = getIcon('edit');
 
-const initialTimeEntries = [
-  {
-    id: 1,
-    project: 'Website Redesign',
-    client: 'Acme Corp',
-    task: 'Homepage Layout',
-    description: 'Creating responsive layout for the homepage',
-    startTime: new Date(Date.now() - 60 * 60 * 1000),
-    endTime: new Date(),
-    duration: 60, // minutes
-  },
-  {
-    id: 2,
-    project: 'Mobile App',
-    client: 'TechStart',
-    task: 'UI Design',
-    description: 'Designing user profiles screen',
-    startTime: new Date(Date.now() - 120 * 60 * 1000),
-    endTime: new Date(Date.now() - 60 * 60 * 1000),
-    duration: 60, // minutes
-  }
-];
-
-const initialProjects = [
-  { id: 1, name: 'Website Redesign', client: 'Acme Corp', startDate: new Date(), manager: 'John Doe', status: 'in-progress', priority: 'high', budget: 15000, description: 'Complete website redesign with new branding' },
-  { id: 2, name: 'Mobile App', client: 'TechStart', startDate: new Date(), manager: 'Jane Smith', status: 'pending', priority: 'medium', budget: 25000, description: 'New mobile app for iOS and Android platforms' },
-  { id: 3, name: 'Logo Design', client: 'Local Cafe' },
-];
-
 // Convert to use forwardRef to accept the ref from parent
 const MainFeature = forwardRef(({ activeTab }, ref) => {
-  const [timeEntries, setTimeEntries] = useState(initialTimeEntries);
-  const [projects, setProjects] = useState(initialProjects);
+  const [timeEntries, setTimeEntries] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState({
+    projects: false,
+    timeEntries: false,
+    clients: false
+  });
+  const [error, setError] = useState({
+    projects: null,
+    timeEntries: null,
+    clients: null
+  });
   const [newEntry, setNewEntry] = useState({
     project: '',
     task: '',
@@ -63,6 +50,116 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
   });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState(null);
+
+  // Load data based on active tab
+  useEffect(() => {
+    const fetchData = async () => {
+      if (activeTab === 'projects') {
+        await fetchProjects();
+      } else if (activeTab === 'time') {
+        await fetchTimeEntries();
+        // Also need projects for the dropdown
+        if (projects.length === 0) {
+          await fetchProjects();
+        }
+      } else if (activeTab === 'clients') {
+        await fetchClients();
+      }
+    };
+
+    fetchData();
+  }, [activeTab]);
+
+  const fetchProjects = async () => {
+    setLoading(prev => ({ ...prev, projects: true }));
+    setError(prev => ({ ...prev, projects: null }));
+    
+    try {
+      const data = await projectService.getProjects();
+      // Transform data to match component's expected format
+      const formattedProjects = data.map(project => ({
+        id: project.Id,
+        name: project.Name,
+        client: project.client,
+        description: project.description,
+        startDate: project.startDate ? new Date(project.startDate) : null,
+        endDate: project.endDate ? new Date(project.endDate) : null,
+        manager: project.manager,
+        teamMembers: project.teamMembers?.split(',') || [],
+        priority: project.priority || 'medium',
+        status: project.status || 'pending',
+        budget: project.budget || 0,
+        tags: project.Tags?.split(',') || [],
+        attachments: project.attachments || []
+      }));
+      
+      setProjects(formattedProjects);
+    } catch (err) {
+      console.error("Error fetching projects:", err);
+      setError(prev => ({ ...prev, projects: "Failed to load projects" }));
+      toast.error("Failed to load projects. Please try again.");
+    } finally {
+      setLoading(prev => ({ ...prev, projects: false }));
+    }
+  };
+
+  const fetchTimeEntries = async () => {
+    setLoading(prev => ({ ...prev, timeEntries: true }));
+    setError(prev => ({ ...prev, timeEntries: null }));
+    
+    try {
+      const data = await timeEntryService.getTimeEntries();
+      // Transform data to match component's expected format
+      const formattedEntries = data.map(entry => ({
+        id: entry.Id,
+        project: entry.project,
+        client: entry.client,
+        task: entry.task,
+        description: entry.description,
+        startTime: entry.startTime ? new Date(entry.startTime) : null,
+        endTime: entry.endTime ? new Date(entry.endTime) : null,
+        duration: entry.duration || 0
+      }));
+      
+      setTimeEntries(formattedEntries);
+    } catch (err) {
+      console.error("Error fetching time entries:", err);
+      setError(prev => ({ ...prev, timeEntries: "Failed to load time entries" }));
+      toast.error("Failed to load time entries. Please try again.");
+    } finally {
+      setLoading(prev => ({ ...prev, timeEntries: false }));
+    }
+  };
+
+  const fetchClients = async () => {
+    setLoading(prev => ({ ...prev, clients: true }));
+    setError(prev => ({ ...prev, clients: null }));
+    
+    try {
+      const data = await clientService.getClients();
+      // Get projects for each client to display active projects
+      const clientsWithProjects = [];
+      
+      for (const client of data) {
+        // Find projects for this client
+        const clientProjects = projects.filter(p => p.client === client.Name);
+        
+        clientsWithProjects.push({
+          id: client.Id,
+          name: client.Name,
+          projects: clientProjects
+        });
+      }
+      
+      setClients(clientsWithProjects);
+    } catch (err) {
+      console.error("Error fetching clients:", err);
+      setError(prev => ({ ...prev, clients: "Failed to load clients" }));
+      toast.error("Failed to load clients. Please try again.");
+    } finally {
+      setLoading(prev => ({ ...prev, clients: false }));
+    }
+  };
 
   const openEditModal = (project) => {
     setCurrentProject(project);
@@ -139,7 +236,9 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     addProject
   }));
 
-  const handleViewProject = (project) => {
+  const handleViewProject = async (project) => {
+    // Fetch the latest project data to view
+    await projectService.getProjectById(project.id);
     toast.info(`Viewing project: ${project.name}`);
   };
 
@@ -147,8 +246,18 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     openEditModal(project);
   };
   
-  const handleDeleteProject = (id) => {
-    toast.info("Delete functionality will be implemented soon");
+  const handleDeleteProject = async (id) => {
+    try {
+      // Confirm before deleting
+      if (window.confirm("Are you sure you want to delete this project? This action cannot be undone.")) {
+        await projectService.deleteProject(id);
+        setProjects(prev => prev.filter(project => project.id !== id));
+        toast.success("Project deleted successfully");
+      }
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      toast.error("Failed to delete project. Please try again.");
+  };
   };
 
   useEffect(() => {
@@ -201,7 +310,8 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
   };
 
   const stopTimer = () => {
-    // Create new time entry
+  const stopTimer = async () => {
+    setLoading(prev => ({ ...prev, timeEntries: true }));
     const endTime = new Date();
     const startTime = new Date(endTime.getTime() - (timer * 1000));
     const newTimeEntry = {
@@ -214,18 +324,42 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
       endTime,
       duration: Math.ceil(timer / 60), // round up to nearest minute
     };
-    
-    setTimeEntries(prev => [newTimeEntry, ...prev]);
-    setIsTimerRunning(false);
-    setTimer(0);
-    toast.success("Time entry saved!");
-    
-    // Reset form
-    setNewEntry({
-      project: '',
-      task: '',
-      description: '',
-    });
+
+    try {
+      // Format for the service
+      const timeEntryData = {
+        Name: `${newEntry.project} - ${newEntry.task}`,
+        project: projects.find(p => p.name === newEntry.project)?.id || null,
+        task: newEntry.task,
+        description: newEntry.description,
+        startTime,
+        endTime,
+        duration: Math.ceil(timer / 60)
+      };
+
+      // Save to the database
+      const savedEntry = await timeEntryService.createTimeEntry(timeEntryData);
+
+      // Add to UI
+      newTimeEntry.id = savedEntry.Id;
+      setTimeEntries(prev => [newTimeEntry, ...prev]);
+      
+      setIsTimerRunning(false);
+      setTimer(0);
+      toast.success("Time entry saved!");
+      
+      // Reset form
+      setNewEntry({
+        project: '',
+        task: '',
+        description: '',
+      });
+    } catch (error) {
+      console.error("Error saving time entry:", error);
+      toast.error("Failed to save time entry. Please try again.");
+    } finally {
+      setLoading(prev => ({ ...prev, timeEntries: false }));
+    }
   };
 
   const deleteTimeEntry = (id) => {
@@ -233,15 +367,31 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     toast.success("Time entry deleted");
   };
 
-  const addProject = (project) => {
-    setProjects(prev => [{
-      id: project.id,
-      name: project.name,
-      client: project.client,
-      description: project.description,
-      startDate: project.startDate,
-      endDate: project.endDate,
-      manager: project.manager,
+  const addProject = async (project) => {
+    try {
+      // Format the project data according to the service requirements
+      const formattedProject = {
+        Name: project.name,
+        client: project.client,
+        description: project.description,
+        startDate: project.startDate,
+        endDate: project.endDate,
+        manager: project.manager,
+        priority: project.priority,
+        status: project.status,
+        budget: project.budget,
+        Tags: project.tags ? project.tags.join(',') : ''
+      };
+
+      // Add locally for UI update
+      setProjects(prev => [{
+        id: project.id,
+        name: project.name,
+        client: project.client,
+        description: project.description,
+        startDate: project.startDate,
+        endDate: project.endDate,
+        manager: project.manager,
       teamMembers: project.teamMembers,
       priority: project.priority,
       status: project.status,
@@ -249,30 +399,72 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
       tags: project.tags,
       attachments: project.attachments
     }, ...prev]);
-    toast.success(`Project "${project.name}" created successfully!`);
+
+      toast.success(`Project "${project.name}" added successfully!`);
+    } catch (error) {
+      console.error("Error adding project:", error);
+      toast.error("Failed to add project. Please try again.");
+    }
   };
 
-  const editProject = (updatedProject) => {
+  const editProject = async (updatedProject) => {
     try {
-      setProjects(prevProjects => 
-        prevProjects.map(proj => 
-          proj.id === updatedProject.id 
+      // Format the project data for the service
+      const formattedProject = {
+        Name: updatedProject.name,
+        client: updatedProject.client,
+        description: updatedProject.description,
+        startDate: updatedProject.startDate,
+        endDate: updatedProject.endDate,
+        manager: updatedProject.manager,
+        priority: updatedProject.priority,
+        status: updatedProject.status,
+        budget: updatedProject.budget,
+        Tags: updatedProject.tags ? updatedProject.tags.join(',') : ''
+      };
+
+      // Update in the database
+      await projectService.updateProject(updatedProject.id, formattedProject);
+
+      // Update locally for UI
+      setProjects(prevProjects => prevProjects.map(proj => 
+        proj.id === updatedProject.id 
           ? { 
-              ...proj, 
-              name: updatedProject.name,
-              client: updatedProject.client,
-              description: updatedProject.description,
-              startDate: updatedProject.startDate,
-              endDate: updatedProject.endDate,
-              manager: updatedProject.manager,
-              teamMembers: updatedProject.teamMembers,
-              priority: updatedProject.priority,
-              status: updatedProject.status,
-              budget: updatedProject.budget,
-              tags: updatedProject.tags,
-              attachments: updatedProject.attachments
-            } 
-          : proj
+  // Projects Tab Display
+        
+        {loading.projects ? (
+          // Loading state for projects
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="card h-64 animate-pulse">
+                <div className="h-6 bg-surface-200 dark:bg-surface-700 rounded w-3/4 mb-4"></div>
+                <div className="h-4 bg-surface-200 dark:bg-surface-700 rounded w-1/2 mb-6"></div>
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="h-4 bg-surface-200 dark:bg-surface-700 rounded"></div>
+                  <div className="h-4 bg-surface-200 dark:bg-surface-700 rounded"></div>
+                  <div className="h-4 bg-surface-200 dark:bg-surface-700 rounded"></div>
+                  <div className="h-4 bg-surface-200 dark:bg-surface-700 rounded"></div>
+                </div>
+                <div className="h-10 bg-surface-200 dark:bg-surface-700 rounded"></div>
+              </div>
+            ))}
+          </div>
+        ) : error.projects ? (
+          // Error state for projects
+          <div className="text-center py-10">
+            <p className="text-red-500 dark:text-red-400 mb-4">{error.projects}</p>
+            <button className="btn-primary" onClick={fetchProjects}>Try Again</button>
+          </div>
+        ) : projects.length === 0 ? (
+          // Empty state for projects
+          <div className="text-center py-10">
+            <p className="text-surface-500 dark:text-surface-400 mb-4">No projects found. Create your first project to get started!</p>
+            <button className="btn-primary" onClick={handleNewProject}>Create Project</button>
+          </div>
+        ) : (
+          // Projects list
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map(project => (
         )
       );
       toast.success(`Project "${updatedProject.name}" updated successfully!`);
@@ -430,6 +622,7 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     );
   }
 
+  // Time Tracking Tab Display
   if (activeTab === 'time') {
     return (
       <div className="space-y-8">
@@ -543,6 +736,21 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
           <h3 className="text-xl font-semibold mb-4">Recent Time Entries</h3>
           <div className="overflow-x-auto">
             <table className="w-full">
+              {loading.timeEntries ? (
+                // Loading skeleton for time entries
+                <tbody>
+                  {[...Array(3)].map((_, index) => (
+                    <tr key={index} className="animate-pulse">
+                      <td className="p-4"><div className="h-6 bg-surface-200 dark:bg-surface-700 rounded"></div></td>
+                      <td className="p-4"><div className="h-6 bg-surface-200 dark:bg-surface-700 rounded"></div></td>
+                      <td className="p-4"><div className="h-6 bg-surface-200 dark:bg-surface-700 rounded"></div></td>
+                      <td className="p-4"><div className="h-6 bg-surface-200 dark:bg-surface-700 rounded"></div></td>
+                      <td className="p-4"><div className="h-6 bg-surface-200 dark:bg-surface-700 rounded"></div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              ) : (
+                <>
               <thead className="bg-surface-100 dark:bg-surface-800 text-left">
                 <tr>
                   <th className="px-6 py-3 text-sm font-semibold">Project / Task</th>
@@ -590,11 +798,13 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
                 {timeEntries.length === 0 && (
                   <tr>
                     <td colSpan="5" className="px-6 py-8 text-center text-surface-500 dark:text-surface-400">
-                      No time entries yet. Start tracking your time!
+                      {error.timeEntries ? error.timeEntries : "No time entries yet. Start tracking your time!"}
                     </td>
                   </tr>
                 )}
               </tbody>
+                </>
+              )}
             </table>
           </div>
         </div>
@@ -602,6 +812,7 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     );
   }
   
+  // Invoices Tab Display
   if (activeTab === 'invoices') {
     return (
       <div className="space-y-6">
@@ -634,47 +845,95 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     );
   }
 
+  // Clients Tab Display
   if (activeTab === 'clients') {
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold mb-4">Clients</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project, index) => (
+        
+        {loading.clients ? (
+          // Loading state for clients
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="card h-48 animate-pulse">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 rounded-full bg-surface-200 dark:bg-surface-700 mr-4"></div>
+                  <div>
+                    <div className="h-6 bg-surface-200 dark:bg-surface-700 rounded w-24 mb-2"></div>
+                    <div className="h-4 bg-surface-200 dark:bg-surface-700 rounded w-16"></div>
+                  </div>
+                </div>
+                <div className="h-px bg-surface-200 dark:bg-surface-700 my-4"></div>
+                <div className="h-5 bg-surface-200 dark:bg-surface-700 rounded w-32 mb-2"></div>
+                <div className="h-4 bg-surface-200 dark:bg-surface-700 rounded w-48"></div>
+              </div>
+            ))}
+          </div>
+        ) : error.clients ? (
+          // Error state for clients
+          <div className="text-center py-10">
+            <p className="text-red-500 dark:text-red-400 mb-4">{error.clients}</p>
+            <button className="btn-primary" onClick={fetchClients}>Try Again</button>
+          </div>
+        ) : clients.length === 0 ? (
+          // Empty state for clients
+          <div className="text-center py-10">
+            <p className="text-surface-500 dark:text-surface-400 mb-4">No clients found. Create your first client when you create a project!</p>
+            <button className="btn-primary" onClick={handleNewProject}>Create Project</button>
+          </div>
+        ) : (
+          // Clients list
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {clients.map((client) => (
+              <motion.div 
+                key={client.id}
+                className="card hover:shadow-lg transition-shadow"
+                whileHover={{ y: -5 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xl mr-4">
+                    {client.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold">{client.name}</h3>
+                    <p className="text-surface-500 dark:text-surface-400 text-sm">
+                      {client.projects ? `${client.projects.length} Project${client.projects.length !== 1 ? 's' : ''}` : 'No Projects'}
+                    </p>
+                  </div>
+                </div>
+                <div className="border-t border-surface-200 dark:border-surface-700 pt-4 mt-4">
+                  <p className="text-sm font-medium">Active Projects:</p>
+                  {client.projects && client.projects.length > 0 ? (
+                    client.projects.map((project, idx) => (
+                      <p key={idx} className="text-surface-500 dark:text-surface-400">{project.name}</p>
+                    ))
+                  ) : (
+                    <p className="text-surface-500 dark:text-surface-400">No active projects</p>
+                  )}
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <button 
+                    className="text-primary text-sm font-medium"
+                    onClick={() => toast.info(`Client details for ${client.name}`)}
+                  >
+                    View Details
+                  </button>
+                </div>
+              </motion.div>
+            ))}
             <motion.div 
-              key={project.id}
-              className="card hover:shadow-lg transition-shadow"
-              whileHover={{ y: -5 }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              className="card border-2 border-dashed border-surface-200 dark:border-surface-700 flex flex-col items-center justify-center cursor-pointer h-full min-h-[150px]"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleNewProject}
             >
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xl mr-4">
-                  {project.client.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold">{project.client}</h3>
-                  <p className="text-surface-500 dark:text-surface-400 text-sm">1 Project</p>
-                </div>
-              </div>
-              <div className="border-t border-surface-200 dark:border-surface-700 pt-4 mt-4">
-                <p className="text-sm font-medium">Active Project:</p>
-                <p className="text-surface-500 dark:text-surface-400">{project.name}</p>
-              </div>
-              <div className="mt-4 flex justify-end">
-                <button className="text-primary text-sm font-medium">View Details</button>
-              </div>
+              <PlusIcon className="h-10 w-10 mb-2 text-surface-400" />
+              <p className="font-medium text-surface-500">New Client</p>
             </motion.div>
-          ))}
-          <motion.div 
-            className="card border-2 border-dashed border-surface-200 dark:border-surface-700 flex flex-col items-center justify-center cursor-pointer h-full min-h-[150px]"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => toast.info("Add new client feature coming soon!")}
-          >
-            <PlusIcon className="h-10 w-10 mb-2 text-surface-400" />
-            <p className="font-medium text-surface-500">New Client</p>
-          </motion.div>
-        </div>
+          </div>
+        )}
       </div>
     );
   }

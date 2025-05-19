@@ -5,7 +5,10 @@ import { toast } from 'react-toastify';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { format } from 'date-fns';
-import { getIcon } from '../utils/iconUtils'; 
+import { getIcon } from '../utils/iconUtils';
+import clientService from '../services/clientService';
+import projectService from '../services/projectService';
+import attachmentService from '../services/attachmentService';
 
 const XIcon = getIcon('x');
 
@@ -25,6 +28,8 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
     attachments: []
   });
   
+  const [clients, setClients] = useState([]);
+  const [loadingClients, setLoadingClients] = useState(false);
   const [validation, setValidation] = useState({
     name: true,
     client: true,
@@ -32,6 +37,8 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
     endDate: true,
     manager: true,
     budget: true
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   });
 
   const [newTag, setNewTag] = useState('');
@@ -50,6 +57,24 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
     { value: 'high', label: 'High' },
     { value: 'urgent', label: 'Urgent' }
   ];
+  
+  // Fetch clients when modal opens
+  useEffect(() => {
+    const fetchClients = async () => {
+      if (isOpen) {
+        setLoadingClients(true);
+        try {
+          const clientsData = await clientService.getClients();
+          setClients(clientsData);
+        } catch (error) {
+          console.error("Error fetching clients:", error);
+        } finally {
+          setLoadingClients(false);
+        }
+      }
+    };
+    fetchClients();
+  }, [isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -128,7 +153,8 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
     URL.revokeObjectURL(attachmentToRemove.url);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
+    setIsSubmitting(true);
     e.preventDefault();
     
     // Validate form fields
@@ -149,24 +175,35 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
     });
     
     if (isNameValid && isClientValid && isStartDateValid && isManagerValid && isBudgetValid) {
-      // Create new project
-      const newProject = {
-        id: Date.now(),
-        name: formData.name.trim(),
-        client: formData.client.trim(),
-        description: formData.description.trim(),
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        manager: formData.manager.trim(),
-        teamMembers: formData.teamMembers,
-        priority: formData.priority,
-        status: formData.status,
-        budget: formData.budget,
-        tags: formData.tags,
-        attachments: formData.attachments
-      };
-      
-      onAddProject(newProject);
+      try {
+        // Check if client exists, if not create a new one
+        const clientExists = clients.some(c => c.Name === formData.client.trim());
+        
+        if (!clientExists) {
+          // Create new client
+          await clientService.createClient({
+            Name: formData.client.trim()
+          });
+        }
+        
+        // Create new project object
+        const newProject = {
+          id: Date.now(), // Will be replaced by the actual ID from the API
+          name: formData.name.trim(),
+          client: formData.client.trim(),
+          description: formData.description.trim(),
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          manager: formData.manager.trim(),
+          teamMembers: formData.teamMembers,
+          priority: formData.priority,
+          status: formData.status,
+          budget: formData.budget,
+          tags: formData.tags,
+          attachments: formData.attachments
+        };
+        
+        await onAddProject(newProject);
       
       // Reset form and close modal
       setFormData({
@@ -196,8 +233,15 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
       
       toast.success("Project created successfully!");
       onClose();
+      } catch (error) {
+        console.error("Error creating project:", error);
+        toast.error("Failed to create project. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
     } else {
       toast.error("Please fill in all required fields correctly.");
+      setIsSubmitting(false);
     }
   };
 
@@ -279,20 +323,28 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                     placeholder="e.g., Website Redesign"
                   />
                   {!validation.name && <p className="mt-1 text-sm text-red-500">Project name is required</p>}
-                </div>
+                  <input
                 
                 <div>
                   <label htmlFor="client" className="label">Client *</label>
                   <input
                     type="text"
-                    id="client"
+                    className={`input ${!validation.name ? 'border-red-500 dark:border-red-500' : ''}`}
                     name="client"
+                    disabled={isSubmitting}
                     value={formData.client}
                     onChange={handleInputChange}
                     className={`input ${!validation.client ? 'border-red-500 dark:border-red-500' : ''}`}
                     placeholder="e.g., Acme Corp"
-                  />
-                  {!validation.client && <p className="mt-1 text-sm text-red-500">Client name is required</p>}
+                <div>
+                  <label htmlFor="client" className="label">
+                    Client * 
+                    {loadingClients && (
+                      <span className="ml-2 inline-block animate-pulse text-surface-400 text-sm">
+                        Loading clients...
+                      </span>
+                    )}
+                  </label>
                 </div>
 
                 <div>
@@ -300,6 +352,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                   <textarea
                     id="description"
                     name="description"
+                    disabled={isSubmitting}
                     value={formData.description}
                     onChange={handleInputChange}
                     className="input h-24"
@@ -313,6 +366,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                     <label className="label">Start Date *</label>
                     <DatePicker
                       selected={formData.startDate}
+                    disabled={isSubmitting}
                       onChange={(date) => handleDateChange(date, 'startDate')}
                       className={`input ${!validation.startDate ? 'border-red-500 dark:border-red-500' : ''}`}
                       placeholderText="Select start date"
@@ -325,6 +379,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                     <label className="label">End Date</label>
                     <DatePicker
                     selected={formData.endDate}
+                      disabled={isSubmitting}
                     onChange={(date) => handleDateChange(date, 'endDate')}
                     className="input"
                     placeholderText="Select end date"
@@ -336,6 +391,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
 
               <div>
                 <label htmlFor="manager" className="label">Project Manager *</label>
+                    disabled={isSubmitting}
                 <input
                   type="text"
                   id="manager"
@@ -352,6 +408,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                 <label className="label">Team Members</label>
                 <div className="flex space-x-2">
                   <input
+                  disabled={isSubmitting}
                     type="text"
                     value={newTeamMember}
                     onChange={(e) => setNewTeamMember(e.target.value)}
@@ -364,11 +421,12 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                     className="btn-primary px-3"
                   >
                     Add
+                    disabled={isSubmitting}
                   </button>
                 </div>
                 {formData.teamMembers.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {formData.teamMembers.map((member, index) => (
+                    className={`btn-primary px-3 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                       <div 
                         key={index}
                         className="bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-3 py-1 rounded-full flex items-center text-sm"
@@ -397,6 +455,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                     value={formData.status}
                     onChange={handleInputChange}
                     className="input"
+                    disabled={isSubmitting}
                   >
                     {statusOptions.map(option => (
                       <option key={option.value} value={option.value}>
@@ -414,6 +473,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                     value={formData.priority}
                     onChange={handleInputChange}
                     className="input"
+                    disabled={isSubmitting}
                   >
                     {priorityOptions.map(option => (
                       <option key={option.value} value={option.value}>
@@ -434,6 +494,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                   onChange={handleInputChange}
                   className={`input ${!validation.budget ? 'border-red-500 dark:border-red-500' : ''}`}
                   placeholder="e.g., 5000"
+                  disabled={isSubmitting}
                 />
                 {!validation.budget && <p className="mt-1 text-sm text-red-500">Valid budget amount is required</p>}
               </div>
@@ -446,6 +507,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
                     className="input flex-1"
+                    disabled={isSubmitting}
                     placeholder="Add tag"
                   />
                   <button
@@ -509,7 +571,7 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
               </div>
               <div className="mt-6 flex justify-end space-x-3">
                 <button type="button" onClick={onClose} className="btn-ghost">Cancel</button>
-                <button type="submit" className="btn-primary">Create Project</button>
+                <button type="submit" className={`btn-primary ${isSubmitting ? 'opacity-70 cursor-wait' : ''}`} disabled={isSubmitting}>{isSubmitting ? 'Creating...' : 'Create Project'}</button>
               </div>
               </form>
             </div>

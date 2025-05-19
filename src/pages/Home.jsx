@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { getIcon } from '../utils/iconUtils';
+import projectService from '../services/projectService';
+import timeEntryService from '../services/timeEntryService';
+import clientService from '../services/clientService';
+import attachmentService from '../services/attachmentService';
+import { useContext } from 'react';
 import MainFeature from '../components/MainFeature';
 import NewProjectModal from '../components/NewProjectModal';
 
@@ -10,8 +15,8 @@ const Clock = getIcon('clock');
 const FileText = getIcon('file-text');
 const Users = getIcon('users');
 
-function Home() {
-  const [activeTab, setActiveTab] = useState('projects');
+function Home({ activeDefaultTab = 'projects' }) {
+  const [activeTab, setActiveTab] = useState(activeDefaultTab);
   const [loading, setLoading] = useState(true);
   const [showNewProjectModal, setShowNewProjectModal] = useState(false);
   const [stats, setStats] = useState({
@@ -23,36 +28,90 @@ function Home() {
 
   const mainFeatureRef = useRef();
 
-  // Simulate data loading
+  // Load dashboard stats
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-      setStats({
-        activeProjects: 4,
-        trackedHours: 37.5,
-        pendingInvoices: 2,
-        totalClients: 6
-      });
-    }, 1200);
-    
-    return () => clearTimeout(timer);
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        // Fetch project stats
+        const projectStats = await projectService.getProjectStats();
+        
+        // Fetch tracked hours
+        const trackedHours = await timeEntryService.getTrackedHours();
+        
+        // Fetch client count
+        const clientCount = await clientService.getClientStats();
+        
+        // Update stats state
+        setStats({
+          activeProjects: projectStats.active || 0,
+          trackedHours: trackedHours.toFixed(1) || 0,
+          pendingInvoices: 0, // This would come from an invoices service
+          totalClients: clientCount || 0
+        });
+      } catch (error) {
+        console.error("Error fetching dashboard stats:", error);
+        toast.error("Failed to load dashboard statistics");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
   }, []);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    // In a real app, we'd fetch different data here
   };
 
   const handleNewProject = () => {
     setShowNewProjectModal(true);
   };
 
-  const handleAddProject = (project) => {
-    if (mainFeatureRef.current && mainFeatureRef.current.addProject) {
-      mainFeatureRef.current.addProject(project);
+  const handleAddProject = async (project) => {
+    try {
+      // Format the project data according to the service requirements
+      const formattedProject = {
+        Name: project.name,
+        client: project.client,
+        description: project.description,
+        startDate: project.startDate,
+        endDate: project.endDate,
+        manager: project.manager,
+        priority: project.priority,
+        status: project.status,
+        budget: project.budget,
+        Tags: project.tags ? project.tags.join(',') : ''
+      };
+
+      // Create the project in the database
+      const createdProject = await projectService.createProject(formattedProject);
+
+      // Upload attachments if any
+      if (project.attachments && project.attachments.length > 0) {
+        for (const attachment of project.attachments) {
+          if (attachment.file) {
+            await attachmentService.uploadAttachment(attachment.file, createdProject.Id);
+          }
+        }
+      }
+
+      // Add to UI through the ref
+      if (mainFeatureRef.current && mainFeatureRef.current.addProject) {
+        mainFeatureRef.current.addProject({
+          ...project,
+          id: createdProject.Id
+        });
+      }
+
+      toast.success(`Project "${project.name}" created successfully`);
+    } catch (error) {
+      console.error("Error creating project:", error);
+      toast.error("Failed to create project. Please try again.");
     }
   };
 
+  // StatCard component for dashboard stats
   const StatCard = ({ icon, title, value, iconColor, valueSuffix = '' }) => {
     const Icon = icon;
     return (
