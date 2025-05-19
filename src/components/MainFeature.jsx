@@ -625,7 +625,8 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
             <p className="font-medium text-surface-600 dark:text-surface-300 mt-4 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-300">New Project</p>
             <p className="text-surface-400 dark:text-surface-500 text-sm mt-1 max-w-[80%] text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">Start tracking a new client project</p>
           </motion.div>
-        </div>,
+        </div>
+      )}
         )}
         <EditProjectModal 
           isOpen={isEditModalOpen}
