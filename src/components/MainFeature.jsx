@@ -211,12 +211,28 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
           {projects.map(project => (
             <motion.div 
               key={project.id}
-              className="card hover:shadow-lg transition-shadow"
-              whileHover={{ y: -5 }}
+              className="relative group"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
             >
-              <h3 className="text-xl font-semibold mb-2">{project.name}</h3>
+              <motion.div 
+                className="absolute inset-0 bg-primary/5 dark:bg-primary-800/20 rounded-2xl -z-10"
+                layoutId={`bg-${project.id}`}
+                initial={{ borderRadius: 16 }}
+                transition={{ layout: { duration: 0.3 } }}
+              />
+              
+              <motion.div 
+                className="neu-card hover:shadow-hover-float"
+                whileHover={{ 
+                  y: -8,
+                  transition: { duration: 0.4, ease: [0.25, 1, 0.5, 1] }
+                }}
+              >
+              <div className="absolute top-0 right-0 h-20 w-20 bg-gradient-to-br from-primary-200/40 to-primary-500/40 dark:from-primary-900/30 dark:to-primary-800/30 rounded-tr-2xl rounded-bl-3xl -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              <h3 className="text-xl font-semibold mb-2 text-primary-800 dark:text-primary-300">{project.name}</h3>
               <p className="text-surface-500 dark:text-surface-400 text-sm mb-4">Client: {project.client}</p>
               <div className="mt-auto flex justify-end space-x-2">
                 <button 
@@ -226,16 +242,36 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
                   <EditIcon className="h-5 w-5" title="Edit project" />
                 </button>
               </div>
+              
+              {/* Decorative elements */}
+              <div className="absolute -bottom-2 -right-2 h-12 w-12 rounded-full bg-secondary-100/30 dark:bg-secondary-900/30 -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </motion.div>
             </motion.div>
           ))}
           <motion.div 
-            className="card border-2 border-dashed border-surface-200 dark:border-surface-700 flex flex-col items-center justify-center cursor-pointer h-full min-h-[150px]"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            className="glass-card border-2 border-dashed border-surface-200 dark:border-surface-700 flex flex-col items-center justify-center cursor-pointer h-full min-h-[180px] relative overflow-hidden group"
+            whileHover={{ 
+              scale: 1.03,
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+              transition: { duration: 0.4, ease: [0.25, 1, 0.5, 1] }
+            }}
+            whileTap={{ 
+              scale: 0.98,
+              transition: { duration: 0.2 }
+            }}
             onClick={() => toast.info("Click the '+ New Project' button at the top to create a project")}
           >
-            <PlusIcon className="h-10 w-10 mb-2 text-surface-400" />
-            <p className="font-medium text-surface-500">New Project</p>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 to-secondary-500/10 dark:from-primary-600/20 dark:to-secondary-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            
+            <motion.div 
+              className="bg-primary-100 dark:bg-primary-900/30 rounded-full p-4"
+              whileHover={{ rotate: 90 }}
+              transition={{ duration: 0.3 }}
+            >
+              <PlusIcon className="h-8 w-8 text-primary-600 dark:text-primary-400" />
+            </motion.div>
+            <p className="font-medium text-surface-600 dark:text-surface-300 mt-4 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-300">New Project</p>
+            <p className="text-surface-400 dark:text-surface-500 text-sm mt-1 max-w-[80%] text-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">Start tracking a new client project</p>
           </motion.div>
         </div>
         
