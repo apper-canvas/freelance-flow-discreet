@@ -512,7 +512,6 @@ function NewProjectModal({ isOpen, onClose, onAddProject }) {
                 <button type="submit" className="btn-primary">Create Project</button>
               </div>
             </form>
-            </form>
           </motion.div>
         </motion.div>
       )}
