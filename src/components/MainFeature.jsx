@@ -2,7 +2,7 @@ import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { toast } from 'react-toastify'; 
-import { getIcon } from '../utils/iconUtils';
+import { getIcon, FileIcon } from '../utils/iconUtils';
 import EditProjectModal from './EditProjectModal';
 
 // Import icons through iconUtils
