@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
@@ -43,7 +43,8 @@ const initialProjects = [
   { id: 3, name: 'Logo Design', client: 'Local Cafe' },
 ];
 
-function MainFeature({ activeTab }) {
+// Convert to use forwardRef to accept the ref from parent
+const MainFeature = forwardRef(({ activeTab }, ref) => {
   const [timeEntries, setTimeEntries] = useState(initialTimeEntries);
   const [projects, setProjects] = useState(initialProjects);
   const [newEntry, setNewEntry] = useState({
@@ -64,6 +65,12 @@ function MainFeature({ activeTab }) {
     task: true,
     description: true,
   });
+  
+  // Expose the addProject method through the ref
+  useImperativeHandle(ref, () => ({
+    addProject
+  }));
+
 
   useEffect(() => {
     let interval = null;
@@ -449,7 +456,12 @@ function MainFeature({ activeTab }) {
     );
   }
 
-  return { addProject };
-}
+  // Default return if no tab matches
+  return (
+    <div className="text-center py-8 text-surface-500 dark:text-surface-400">
+      Select a tab to view content
+    </div>
+  );
+});
 
 export default MainFeature;
