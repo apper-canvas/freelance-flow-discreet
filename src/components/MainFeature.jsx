@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { getIcon } from '../utils/iconUtils';
+import EditProjectModal from './EditProjectModal';
 
 // Import icons through iconUtils
 const CheckIcon = getIcon('check-circle');
@@ -53,6 +54,8 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     description: '',
   });
   const [newProject, setNewProject] = useState({
+    id: null,
+    name: '',
     project: '',
     task: '',
     description: '',
@@ -65,11 +68,14 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     task: true,
     description: true,
   });
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentProject, setCurrentProject] = useState(null);
   
   // Expose the addProject method through the ref
   useImperativeHandle(ref, () => ({
     addProject
   }));
+
 
 
   useEffect(() => {
@@ -107,6 +113,13 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
       setValidation(prev => ({ ...prev, [name]: true }));
     }
   };
+
+  const openEditModal = (project) => {
+    setCurrentProject(project);
+    setIsEditModalOpen(true);
+  };
+  
+  const closeEditModal = () => setIsEditModalOpen(false);
 
   const startTimer = () => {
     // Validate form fields
@@ -171,6 +184,25 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     toast.success(`Project "${project.name}" created successfully!`);
   };
 
+  const editProject = (updatedProject) => {
+    try {
+      setProjects(prevProjects => 
+        prevProjects.map(proj => 
+          proj.id === updatedProject.id 
+          ? { 
+              ...proj, 
+              name: updatedProject.name, 
+              client: updatedProject.client 
+            } 
+          : proj
+        )
+      );
+      toast.success(`Project "${updatedProject.name}" updated successfully!`);
+    } catch (error) {
+      toast.error("Failed to update project. Please try again.");
+    }
+  };
+
   if (activeTab === 'projects') {
     return (
       <div className="space-y-6">
@@ -187,8 +219,11 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
               <h3 className="text-xl font-semibold mb-2">{project.name}</h3>
               <p className="text-surface-500 dark:text-surface-400 text-sm mb-4">Client: {project.client}</p>
               <div className="mt-auto flex justify-end space-x-2">
-                <button className="p-2 text-surface-500 hover:text-surface-700 dark:hover:text-surface-300">
-                  <EditIcon className="h-5 w-5" />
+                <button 
+                  onClick={() => openEditModal(project)}
+                  className="p-2 text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
+                >
+                  <EditIcon className="h-5 w-5" title="Edit project" />
                 </button>
               </div>
             </motion.div>
@@ -203,6 +238,14 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
             <p className="font-medium text-surface-500">New Project</p>
           </motion.div>
         </div>
+        
+        {/* Edit Project Modal */}
+        <EditProjectModal 
+          isOpen={isEditModalOpen}
+          onClose={closeEditModal}
+          project={currentProject}
+          onSave={editProject}
+        />
       </div>
     );
   }
