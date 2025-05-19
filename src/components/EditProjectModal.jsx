@@ -207,12 +207,12 @@ const EditProjectModal = ({ isOpen, onClose, project, onSave }) => {
     
     if (isNameValid && isClientValid && isStartDateValid && isManagerValid && isBudgetValid) {
       try {
+        setIsSubmitting(true);
         // Format the project data for the API
         const projectData = {
           Name: formData.name,
           client: formData.client,
           description: formData.description,
-        setIsSubmitting(true);
           startDate: formData.startDate,
           endDate: formData.endDate,
           manager: formData.manager,
