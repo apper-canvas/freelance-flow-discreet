@@ -309,7 +309,6 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
     toast.info("Timer paused");
   };
 
-  const stopTimer = () => {
   const stopTimer = async () => {
     setLoading(prev => ({ ...prev, timeEntries: true }));
     const endTime = new Date();
@@ -430,7 +429,34 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
       setProjects(prevProjects => prevProjects.map(proj => 
         proj.id === updatedProject.id 
           ? { 
-  // Projects Tab Display
+              ...proj,
+              name: updatedProject.name,
+              client: updatedProject.client,
+              description: updatedProject.description,
+              startDate: updatedProject.startDate,
+              endDate: updatedProject.endDate,
+              manager: updatedProject.manager,
+              teamMembers: updatedProject.teamMembers,
+              priority: updatedProject.priority,
+              status: updatedProject.status,
+              budget: updatedProject.budget,
+              tags: updatedProject.tags,
+              attachments: updatedProject.attachments
+            } 
+            : proj
+      ));
+      
+      toast.success(`Project "${updatedProject.name}" updated successfully!`);
+    } catch (error) {
+      console.error("Error updating project:", error);
+      toast.error("Failed to update project. Please try again.");
+    }
+  };
+
+  if (activeTab === 'projects') {
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold mb-4">Projects</h2>
         
         {loading.projects ? (
           // Loading state for projects
@@ -459,26 +485,12 @@ const MainFeature = forwardRef(({ activeTab }, ref) => {
           // Empty state for projects
           <div className="text-center py-10">
             <p className="text-surface-500 dark:text-surface-400 mb-4">No projects found. Create your first project to get started!</p>
-            <button className="btn-primary" onClick={handleNewProject}>Create Project</button>
+            <button className="btn-primary" onClick={() => toast.info("Create a new project")}>Create Project</button>
           </div>
         ) : (
           // Projects list
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map(project => (
-        )
-      );
-      toast.success(`Project "${updatedProject.name}" updated successfully!`);
-    } catch (error) {
-      toast.error("Failed to update project. Please try again.");
-    }
-  };
-
-  if (activeTab === 'projects') {
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-semibold mb-4">Projects</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map(project => (
             <motion.div 
               key={project.id}
               className="relative group"
